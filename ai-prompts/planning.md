@@ -156,3 +156,41 @@ assumptions with justification; kept 5 as genuine open questions for a PO.
 
 Caught AI mistake — first pass had a direct contradiction between
 Assumption #9 and the Edge Cases section on the same rule.
+
+## Prompt 4 — Acceptance criteria
+
+**Prompt:**
+
+Based on requirements-analysis.md, write acceptance-criteria.md using this template:
+
+## Core
+- [ ] ...
+## Validation
+- [ ] ...
+## Error Handling
+- [ ] ...
+## Testing
+- [ ] ...
+## Documentation
+- [ ] ...
+
+Each item should be a single, testable, checkbox-style statement (Given/When/Then style
+is fine but not required). Cover: ticket CRUD, the state machine transitions (list each
+valid transition and each class of rejected transition explicitly), comments, terminal-ticket
+read-only behavior, search/filter, and persistence across restart. Base every item strictly
+on what's in requirements-analysis.md — don't introduce new scope.
+
+**Accepted:**
+
+ All
+
+
+**Changed:**
+
+ N/A 
+
+
+**Rejected:**
+
+ N/A
+
