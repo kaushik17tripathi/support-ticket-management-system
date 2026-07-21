@@ -194,3 +194,43 @@ on what's in requirements-analysis.md — don't introduce new scope.
 
  N/A
 
+## Prompt 4 — Implementation plan
+**Prompt:**
+Based on requirements-analysis.md and acceptance-criteria.md, write implementation-plan.md
+with these sections:
+
+## Overview
+## Task Breakdown (ordered, with rough hour estimates — total should land around 8-12
+hours for Core, matching the assignment's scoped effort)
+## Milestones
+## AI Usage Plan (how I'll use AI at each stage: planning, scaffolding, code gen,testing, debugging, review)
+## Risks
+## Mitigation
+
+Task breakdown should be granular enough to be useful (e.g., "Prisma schema + migration"
+as one task, not "build backend" as one task), and should sequence backend before
+frontend where there's a dependency (e.g., state machine service before UI that
+consumes it).
+
+**AI Response Summary:** Generated a 27-task breakdown across setup/data layer, backend
+domain logic, backend API layer, backend tests, frontend foundation/features, error
+polish, and documentation, totaling ~10.5h. Sequenced state machine and backend tests
+before frontend work. Included 4 milestones (M1-M4), a stage-by-stage AI Usage Plan,
+and Risks/Mitigation tables covering state machine bugs, UI/backend drift, terminal-ticket
+leaks, concurrency, search injection, persistence, scope creep, and AI over-reliance.
+
+**Accepted:** Full task breakdown, milestones, AI usage plan, and risk/mitigation tables
+as generated — hour total and sequencing matched expectations.
+
+**Changed:** N/A
+
+**Rejected:** N/A
+
+**Note:** The Mitigation table quietly resolved 3 of 5 open Clarifications from
+requirements-analysis.md (default priority, same-state transition handling, combined
+invalid-status+field-update behavior) inside a mitigation row rather than as an explicit
+decision. Flagged to formally promote these into design-notes.md in Step 5 rather than
+leave them buried here. One Clarification (clearing assignedTo while In Progress) is
+still unresolved — decided separately: allowed, since Assumption #6 already treats
+assignedTo as optional at all times.
+
