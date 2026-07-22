@@ -206,3 +206,41 @@ of why re-checking new code against prior committed artifacts matters, not just
 against the current prompt's own instructions. Also flagged escapeLikePattern's
 backslash-escaping as unverified — will confirm with a dedicated special-character
 search test in Step 10 rather than trusting the code comment.
+
+## Prompt 6 — CommentService (initial generation)
+**Prompt:** Create backend/src/services/commentService.ts using the same patterns as
+ticketService.ts (AppError, prisma singleton, isTerminal from ticketStatusService).
+
+Implement:
+create(ticketId: string, message: string, createdById: string): Promise<CommentDto>
+
+Check order (api-contract.md):
+1. message present and non-empty after trim? -> 400 VALIDATION_ERROR
+2. ticket exists? -> 404 NOT_FOUND
+3. ticket is terminal (CLOSED/CANCELLED)? -> 422 TERMINAL_TICKET_READ_ONLY
+
+Note: createdById existence is validated by the route layer via ActingUserService,
+not re-validated here, to avoid duplicating that check — confirm this matches how
+ticketService.ts's create() handles createdById, and be consistent.
+
+**AI Response Summary:** Implemented create() with correct check order (message ->
+exists -> terminal), but did NOT validate createdById — instead documented an
+assumption that a route-layer ActingUserService would handle it. No such service
+exists anywhere in the codebase.
+
+**Accepted:** Check order and core comment-creation logic.
+
+**Changed:** Rejected the ActingUserService assumption entirely — no such service
+exists, and ticketService.create() already validates createdById inline, not via any
+route-layer dependency. Had AI extract assertUserExists into a shared
+userValidation.ts module, used by both ticketService and commentService consistently.
+
+**Rejected:** The docstring's claim about route-layer validation — factually incorrect
+given the current codebase state.
+
+**Note:** Caught a real gap, not just a style nit — without this fix, an invalid
+createdById on comment creation would bypass all application-level validation and
+surface a raw Prisma FK constraint error to the API consumer, violating the error
+taxonomy in api-contract.md. Traced by explicitly asking Cursor to reconcile behavior
+between two services rather than reviewing each file in isolation — cross-file
+consistency checks catch things single-file review misses.

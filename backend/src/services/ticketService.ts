@@ -6,6 +6,7 @@ import {
   getAllowedTransitions,
   isTerminal,
 } from "./ticketStatusService";
+import { assertUserExists } from "./userValidation";
 
 const userSelect = {
   id: true,
@@ -104,16 +105,6 @@ function isValidPriority(value: Priority): boolean {
 
 function validationError(message: string, details: AppError["details"]): never {
   throw new AppError("VALIDATION_ERROR", 400, message, details);
-}
-
-async function assertUserExists(userId: string, field: string): Promise<void> {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-
-  if (!user) {
-    validationError("Validation failed", [
-      { field, message: "User does not exist" },
-    ]);
-  }
 }
 
 async function findTicketOrThrow(id: string) {
