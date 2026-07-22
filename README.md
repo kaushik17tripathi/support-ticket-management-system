@@ -185,6 +185,8 @@ Integration tests use a separate `test.db` and fixed test users — not dev seed
 | [ui-flow.md](./ui-flow.md) | Frontend screens and flows |
 | [design-notes.md](./design-notes.md) | Architecture synthesis |
 | [implementation-plan.md](./implementation-plan.md) | Task breakdown |
+| [test-strategy.md](./test-strategy.md) | Testing approach and coverage |
+| [test-results.md](./test-results.md) | Latest verified test run output |
 | [ai-prompts/](./ai-prompts/) | Prompt history by lifecycle phase |
 
 ## Current status

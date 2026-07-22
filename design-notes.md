@@ -176,7 +176,7 @@ Check-order decisions ensure the UI sees **consistent** codes (e.g., terminal ti
 
 ## Testing Strategy Link
 
-Detailed test plan: **`test-strategy.md`** (to be populated). Coverage targets from `acceptance-criteria.md`:
+Detailed test plan: **`test-strategy.md`**. Latest run output: **`test-results.md`**. Coverage targets from `acceptance-criteria.md`:
 
 | Area | Focus |
 |------|-------|
