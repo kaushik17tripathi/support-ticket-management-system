@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  CANCELLED
+}
+
+model User {
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  role            String
+  createdTickets  Ticket[]  @relation("TicketCreator")
+  assignedTickets Ticket[]  @relation("TicketAssignee")
+  comments        Comment[]
+}
+
+model Ticket {
+  id           String       @id @default(cuid())
+  title        String
+  description  String
+  priority     Priority
+  status       TicketStatus @default(OPEN)
+  assignedToId String?
+  assignedTo   User?        @relation("TicketAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdById  String
+  createdBy    User         @relation("TicketCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  comments     Comment[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([status])
+  @@index([priority])
+}
+
+model Comment {
+  id          String   @id @default(cuid())
+  ticketId    String
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  message     String
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt   DateTime @default(now())
+
+  @@index([ticketId])
+}
