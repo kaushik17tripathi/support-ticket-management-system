@@ -1,0 +1,55 @@
+# --- Dependencies ---
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+.pnp
+.pnp.js
+
+# --- Environment / secrets ---
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+!.env.example
+!**/.env.example
+
+# --- Prisma / SQLite database ---
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+*.db
+*.db-journal
+!database/seed-data/**
+
+# Note: dev.db is intentionally ignored. Database SETUP is reproducible via
+# `npm run db:migrate && npm run db:seed` per database/setup-notes.md — the actual
+# .db file should not be committed, only the schema/migrations that generate it.
+
+# --- Build output ---
+backend/dist/
+frontend/dist/
+frontend/build/
+*.tsbuildinfo
+
+# --- Vite ---
+frontend/.vite/
+
+# --- Test / coverage ---
+coverage/
+.nyc_output/
+
+# --- Logs ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# --- Cursor ---
+.cursor/logs/
