@@ -53,3 +53,8 @@ Thumbs.db
 
 # --- Cursor ---
 .cursor/logs/
+
+# --- Prisma auto-generated AI assistant scaffolding (not used) ---
+backend/.claude/
+backend/.agents/
+backend/.windsurf/d
