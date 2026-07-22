@@ -143,3 +143,66 @@ trusting Cursor's own "all passing" summary.
 **Changed:** N/A
 
 **Rejected:** N/A
+
+## Prompt 5 — TicketService (initial generation)
+**Prompt:** Create backend/src/services/ticketService.ts implementing ticket CRUD and status
+transitions per design-notes.md's Backend Design section and api-contract.md's check
+orders. Use Prisma client from src/lib/prisma.ts and the state machine helpers from
+src/services/ticketStatusService.ts — do not reimplement transition logic here.
+
+Implement these methods, each following its documented check order exactly (return/throw
+on first failure, in sequence):
+
+1. create(data: { title, description, priority, assignedToId?, createdById }) 
+   - validate title/description non-empty after trim, priority is valid enum,
+     assignedToId (if provided) references existing user
+   - status always set to OPEN server-side
+
+2. list(params: { search?: string, status?: TicketStatus }) 
+   - case-insensitive search on title + description only
+   - empty/omitted search returns all (subject to status filter)
+   - invalid status value should be caught by the route layer (Zod), not here
+
+3. getById(id: string) — include comments ordered oldest-first, and computed
+   allowedStatuses via getAllowedTransitions
+
+4. updateFields(id: string, data: { title?, description?, priority?, assignedToId? }) 
+   - check order: ticket exists (404) -> is terminal (422) -> field validation (400)
+   - at least one field required
+   - assignedToId can be explicitly set to null
+
+5. transitionStatus(id: string, status: TicketStatus, expectedStatus: TicketStatus) 
+   - check order: ticket exists (404) -> is terminal (422) -> expectedStatus matches
+     current (409) -> same-state check (400) -> canTransition (422) -> atomic update
+
+Throw typed errors (create a shared AppError class with code/status/details) rather than
+returning ad-hoc objects, so the route layer can map them consistently to api-contract.md's
+error taxonomy.
+
+**AI Response Summary:** Generated create, list, getById, updateFields, and
+transitionStatus, all throwing typed AppError instances. transitionStatus uses an
+atomic conditional update (updateMany with where: {id, status: expectedStatus}) as a
+second layer of concurrency protection beyond the initial read-check. updateFields
+implemented check order as literally specified in my prompt: exists -> terminal ->
+field validation.
+
+**Accepted:** transitionStatus check order and atomic-update race protection;
+assignedToId null-vs-undefined handling in both create and updateFields (correctly
+distinguishes "not provided" from "explicitly cleared" using !== undefined checks,
+not truthiness).
+
+**Changed:** Caught that updateFields' check order (exists -> terminal -> field
+validation) contradicts the already-committed api-contract.md order (field validation
+-> exists -> terminal). Traced this to my own Step 9a prompt specifying the wrong
+order, not an independent AI error. Corrected via follow-up prompt to reorder
+validateUpdateFieldsInput() before findTicketOrThrow().
+
+**Rejected:** N/A
+
+**Note:** Caught a cross-document inconsistency, not just a code bug — the
+implementation was internally consistent with what I asked for, but what I asked for
+had drifted from an earlier, already-reviewed design decision. This is a good example
+of why re-checking new code against prior committed artifacts matters, not just
+against the current prompt's own instructions. Also flagged escapeLikePattern's
+backslash-escaping as unverified — will confirm with a dedicated special-character
+search test in Step 10 rather than trusting the code comment.
