@@ -10,6 +10,16 @@ Concise synthesis of architectural decisions for Core. Detail lives in companion
 
 ---
 
+## Note on repository structure
+
+The assignment template specifies top-level `src/` and `tests/` folders. Since this is
+a full-stack project with independent frontend and backend dependency trees, I split
+these into `backend/` and `frontend/` at the root instead, each with its own `src/` and
+`tests/` internally (e.g., `backend/src/`, `backend/tests/`, `frontend/src/`). This
+preserves the intent of the required structure (source and tests clearly separated)
+while keeping the two apps' dependencies and configs independent, which a single shared
+src/ would not allow cleanly.
+
 ## Architecture Overview (frontend, backend, database)
 
 Three-tier layout aligned with `implementation-plan.md`:
