@@ -57,7 +57,7 @@ multiple conditions applied simultaneously (e.g., a CLOSED ticket + stale
 expectedStatus). Without this, the eventual state-machine service implementation and
 its integration tests would have been ambiguous on which error to expect.
 
-## Prompt 1 — UI flow
+## Prompt 3 — UI flow
 **Prompt:** Based on api-contract.md, data-model.md, and requirements-analysis.md, write ui-flow.md
 describing the frontend screens and flow:
 

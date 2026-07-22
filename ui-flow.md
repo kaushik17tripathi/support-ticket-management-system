@@ -1,116 +1,340 @@
-# Design Prompts
+# UI Flow
 
-## Prompt 1 — Data model / Prisma schema
+Frontend screen flows for the Support Ticket Management System (Core). API shapes and error codes are defined in `api-contract.md`; this document describes how the React app consumes them.
 
-**Prompt:**
-
-Based on requirements-analysis.md and acceptance-criteria.md, write data-model.md with:
-
-1. An ERD description (entities, fields, relationships, in plain text/table form)
-2. The actual Prisma schema code for User, Ticket, Comment
-3. A short "Design Decisions" section explaining: why status and priority are enums
-   (not free strings), how referential integrity is enforced at the DB level (FKs on
-   assignedTo, createdBy, ticketId), and the cascade behavior when a ticket is referenced
-   by comments
-
-Also formally resolve these two previously-open items and note them as resolved here:
-- Default priority on create: no default — priority is a required field, client must
-  select one explicitly
-- assignedTo can be cleared to null while a ticket is In Progress (assignedTo is
-  optional at all times per Assumption #6)
-
-**AI Response Summary:** Generated ERD tables, relationship cardinality, Prisma schema
-with User/Ticket/Comment enums (Priority, TicketStatus), FK onDelete strategies
-(Restrict/SetNull/Cascade), indexes on status/priority/ticketId, and a Design Decisions
-section justifying enum usage, referential integrity choices, and cascade behavior.
-Also formally resolved the two open items carried over from implementation-plan.md
-(no default priority, assignedTo nullable while In Progress).
-
-**Accepted:** Full schema, ERD, and design decisions as generated — status/priority
-correctly modeled as Prisma enums (verified this specifically, since a prior prompt
-in this project once produced status as a plain string).
-
-**Changed:** N/A
-
-**Rejected:** N/A
-
-**Note:** Verified enum usage explicitly given earlier experience in this project with
-AI defaulting to plain strings for status. This time it was correct on the first pass —
-recorded here as evidence of validation, not just acceptance.
+**Core principle — mirror, don't duplicate:** The UI never maintains a client-side state-machine map. Status transition controls are rendered **only** from `allowedStatuses` returned by the API (`GET /tickets/:id`, `POST /tickets`, `PATCH` responses). After every successful mutation or error that may have changed server state, refetch ticket data and re-derive controls from the latest `allowedStatuses`.
 
 ---
 
-## Prompt 2 — Resolve check-order ambiguity in status transition endpoint
+## Global layout
 
-**Prompt:**
+```
+┌─────────────────────────────────────────────────────────────┐
+│  App header: title + Acting user dropdown + nav links       │
+├─────────────────────────────────────────────────────────────┤
+│  Main content (route outlet)                                │
+│    /              → Ticket list                             │
+│    /tickets/new   → Create ticket form                      │
+│    /tickets/:id   → Ticket detail                           │
+└─────────────────────────────────────────────────────────────┘
+```
 
-For PATCH /tickets/:id/status, specify the exact validation/check order when multiple
-failure conditions could apply simultaneously. Add a "Check Order" subsection listing
-the sequence, e.g.:
-1. Ticket exists? (else 404)
-2. Ticket is terminal (CLOSED/CANCELLED)? (else 422 TERMINAL_TICKET_READ_ONLY) — checked
-   before concurrency, since a terminal ticket is rejected regardless of expectedStatus
-3. expectedStatus matches current status? (else 409 STATUS_CONFLICT)
-4. status/expectedStatus are valid enum values? (else 400 VALIDATION_ERROR)
-5. Transition is permitted from current status? (else 422 INVALID_STATUS_TRANSITION)
-Confirm or correct this order and add it to the doc. Apply the same explicit ordering
-to the terminal-ticket checks in PATCH /tickets/:id and POST /tickets/:id/comments too.
-
-**AI Response Summary:** Added explicit "Check Order" subsections to PATCH /tickets/:id,
-PATCH /tickets/:id/status, and POST /tickets/:id/comments, each listing numbered
-first-failure-wins validation sequences tailored to that endpoint. For the status
-endpoint specifically: enum validation before concurrency check, and terminal-ticket
-check before concurrency check (so a CLOSED ticket with a stale expectedStatus returns
-422 TERMINAL_TICKET_READ_ONLY, not 409 STATUS_CONFLICT).
-
-**Accepted:** All three check-order sequences as generated — reasoning was sound and
-matched my own intent for terminal-check-before-concurrency precedence.
-
-**Changed:** N/A
-
-**Rejected:** N/A
-
-**Note:** This closes a real design gap — the first-pass api-contract.md listed all
-possible error codes for the status endpoint but never specified precedence when
-multiple conditions applied simultaneously (e.g., a CLOSED ticket + stale
-expectedStatus). Without this, the eventual state-machine service implementation and
-its integration tests would have been ambiguous on which error to expect.
+- Persistent header on all screens.
+- Primary navigation: **Tickets** (list), **New ticket** (create).
+- No authentication UI — acting user is a demo attribution mechanism.
 
 ---
 
-## Prompt 3 — UI flow
+## 1. Acting-user selection
 
-**Prompt:**
+### Purpose
 
-Based on api-contract.md, data-model.md, and requirements-analysis.md, write ui-flow.md
-describing the frontend screens and flow:
+Select which seeded user performs writes (`createdBy` on tickets/comments). Required before any mutating API call.
 
-1. Acting-user selection (dropdown, persisted for session)
-2. Ticket list screen: search input, single-status filter, list display, loading/empty
-   states, navigation to detail
-3. Create ticket screen/form: fields, validation feedback, success/failure handling
-4. Ticket detail screen: field display, edit mode, status transition controls (driven
-   by allowedStatuses from the API), comment list, comment form
-5. Terminal ticket presentation: how CLOSED/CANCELLED tickets look different (read-only
-   indicators, disabled controls, hidden comment form)
-6. Error state handling: how 400/404/409/422/500 responses from api-contract.md surface
-   to the user in each screen
+### API
 
-For each screen, describe layout intent (not exact CSS), key interactions, and which
-API endpoint(s) it calls. Note where the UI mirrors backend allowedStatuses rather than
-re-implementing state machine logic client-side.
+| Call | When |
+|------|------|
+| `GET /api/users` | On app load (and on retry after fetch failure) |
 
-**AI Response Summary:** Generated full screen-by-screen flow (acting-user selector,
-ticket list, create form, ticket detail with edit/status/comments, terminal-ticket
-presentation, error-state mapping) consuming api-contract.md endpoints. Explicitly
-enforced "UI mirrors allowedStatuses, never re-implements state machine" as a
-recurring principle across every relevant section, and mapped every error code from
-api-contract.md to screen-specific behavior including the full 409 conflict-resolution
-flow (send expectedStatus → refetch on conflict → resync → retry).
+### UI behaviour
 
-**Accepted:** Full document as generated — directly closes the "UI/backend drift" risk
-flagged in implementation-plan.md by design, not by later correction.
+- **Control:** `<select>` in the header labelled “Acting as”.
+- **Options:** `name` (and optionally `role`) from `data[]`; value = `User.id`.
+- **Persistence:** Save selected `User.id` to `localStorage` (e.g. key `actingUserId`). Restore on reload; if stored ID is missing from fresh `GET /users`, clear storage and prompt re-selection.
+- **Empty state:** If no user selected, show inline prompt in header (“Select a user to create or edit tickets”). Disable submit buttons on create/edit/comment/status forms until selected.
+- **Read-only views:** List and detail `GET` requests work without a selection; writes require it.
 
-**Changed:** N/A
+### Errors
 
-**Rejected:** N/A
+| Code | Surfacing |
+|------|-----------|
+| Network / `500` | Banner in header: “Could not load users — retry.” |
+| (n/a for GET users) | |
+
+---
+
+## 2. Ticket list screen
+
+**Route:** `/`
+
+### Purpose
+
+Browse, search, and filter tickets; navigate to detail or create.
+
+### API
+
+| Call | When |
+|------|------|
+| `GET /api/tickets?search=&status=` | On mount, when search/filter changes (debounced search ~300ms), after returning from create |
+
+Query params:
+
+- `search` — omitted or empty string = no keyword filter.
+- `status` — omitted = all statuses; one `TicketStatus` enum value when filter active.
+
+### Layout intent
+
+```
+[ Search input                    ] [ Status filter ▼ ] [ + New ticket ]
+
+┌──────────────────────────────────────────────────────┐
+│ Title          │ Status │ Priority │ Assignee │ Created │
+├────────────────┼────────┼──────────┼──────────┼─────────┤
+│ Login Issue    │ OPEN   │ HIGH     │ Priya S. │ Jul 18  │
+│ ...            │        │          │          │         │
+└──────────────────────────────────────────────────────┘
+                                    Showing N ticket(s)
+```
+
+- Table or card list — each row links to `/tickets/:id`.
+- Status filter: dropdown with “All statuses” + each `TicketStatus` (display labels: “Open”, “In Progress”, etc.).
+- Search: single text input; debounced; searches `title` and `description` (server-side).
+
+### States
+
+| State | Presentation |
+|-------|----------------|
+| **Loading** | Skeleton rows or spinner; keep prior results visible if refetching |
+| **Empty (no tickets in DB)** | “No tickets yet” + prominent “Create ticket” CTA |
+| **Empty (no matches)** | “No tickets match your search/filter” + “Clear filters” action |
+| **Success** | Render `data[]`; show `meta.count` |
+| **Error** | Full-width error banner with retry; do not clear last good results on background refetch failure |
+
+### Interactions
+
+- Click row → navigate to `/tickets/:id`.
+- Change search or status → refetch list.
+- “New ticket” → `/tickets/new`.
+
+### Errors
+
+| HTTP | Code | Surfacing |
+|------|------|-----------|
+| `400` | `VALIDATION_ERROR` | Inline under status filter (“Invalid status value”) |
+| `500` / network | — | Banner + retry button |
+
+---
+
+## 3. Create ticket screen
+
+**Route:** `/tickets/new`
+
+### Purpose
+
+Create a ticket with required fields; redirect to detail on success.
+
+### API
+
+| Call | When |
+|------|------|
+| `GET /api/users` | Populate assignee dropdown (may reuse cached users from context) |
+| `POST /api/tickets` | Form submit |
+
+Headers: `X-Acting-User-Id`, `Content-Type: application/json`.
+
+### Form fields
+
+| Field | Control | Required | Notes |
+|-------|---------|----------|-------|
+| `title` | text input | Yes | Trim whitespace |
+| `description` | textarea | Yes | Trim whitespace |
+| `priority` | select | Yes | `LOW`, `MEDIUM`, `HIGH`, `CRITICAL` — no default; placeholder “Select priority” |
+| `assignedToId` | select | No | “Unassigned” option → omit or `null`; user IDs from `GET /users` |
+
+Do **not** send `status` or `createdById` in the body.
+
+### Layout intent
+
+- Single-column form with labels, field-level error slots, Cancel (→ list) and Create buttons.
+- Create disabled when acting user not selected or while submitting.
+
+### Success
+
+- `201` → navigate to `/tickets/:id` for `data.id`.
+- Optionally show brief success toast before redirect.
+
+### Errors
+
+| HTTP | Code | Surfacing |
+|------|------|-----------|
+| `400` | `VALIDATION_ERROR` | Map `error.details[]` to fields by `field` key |
+| `400` | `INVALID_ACTING_USER` | Header-level alert: re-select acting user |
+| `500` / network | — | Form-level banner; preserve user input |
+
+---
+
+## 4. Ticket detail screen
+
+**Route:** `/tickets/:id`
+
+### Purpose
+
+View ticket metadata, edit fields, transition status, read and add comments.
+
+### API
+
+| Call | When |
+|------|------|
+| `GET /api/tickets/:id` | On mount, after mutations, on `409`/`422` recovery |
+| `GET /api/users` | Assignee dropdown in edit mode |
+| `PATCH /api/tickets/:id` | Save field edits |
+| `PATCH /api/tickets/:id/status` | Status transition button click |
+| `POST /api/tickets/:id/comments` | Comment form submit |
+
+All mutating calls include `X-Acting-User-Id`.
+
+### Layout intent (non-terminal)
+
+```
+[ ← Back to tickets ]                    [ Edit ] [ Save ] [ Cancel ]
+
+Title: Login Issue
+Status: IN_PROGRESS          Priority: HIGH
+Assignee: Alex Kim           Created by: James Chen · Jul 17
+Updated: Jul 20
+
+Description:
+  User cannot log in with SSO...
+
+Status actions (from allowedStatuses only):
+  [ Mark Resolved ]  [ Cancel ticket ]
+
+Comments (oldest first)
+  ┌─────────────────────────────────────┐
+  │ Alex Kim · Jul 17 09:30             │
+  │ Pulled gateway logs — ...           │
+  └─────────────────────────────────────┘
+
+  [ Add comment textarea ]  [ Post ]
+```
+
+### View vs edit mode (non-terminal only)
+
+| Mode | Behaviour |
+|------|-----------|
+| **View** | Fields read-only; “Edit” enables edit mode |
+| **Edit** | `title`, `description`, `priority`, `assignedTo` editable; Save → `PATCH /tickets/:id`; Cancel → discard local changes, exit edit mode |
+
+- `createdBy`, `status`, timestamps always read-only in UI.
+- `assignedToId: null` → “Unassigned” in assignee select.
+
+### Status transitions
+
+- Render one button per entry in `data.allowedStatuses`.
+- Button label = human-readable target status (e.g. `IN_PROGRESS` → “Start progress”).
+- On click:
+  1. `PATCH /api/tickets/:id/status` with `{ status: <target>, expectedStatus: data.status }`.
+  2. On `200` → replace local ticket with response `data` (includes updated `allowedStatuses`).
+- **Never** show transitions not in `allowedStatuses`, even if the user “knows” the state machine.
+
+### Comments
+
+- List `data.comments` oldest → newest.
+- Each item: author `name`, `createdAt`, `message`.
+- Add form: textarea + Post; `POST` with `{ message }`.
+- On `201` → append comment or refetch detail (refetch preferred for consistency).
+
+### Loading / not found
+
+| State | Presentation |
+|-------|----------------|
+| Loading | Skeleton or spinner for detail panel |
+| `404` | “Ticket not found” + link to list |
+| Error (other) | Banner + retry |
+
+---
+
+## 5. Terminal ticket presentation (`CLOSED`, `CANCELLED`)
+
+When `data.status` is `CLOSED` or `CANCELLED` (and `allowedStatuses` is `[]`):
+
+### Visual treatment
+
+- Muted/neutral background or border on detail card.
+- Prominent read-only banner: “This ticket is closed and cannot be modified.” / “This ticket was cancelled and cannot be modified.”
+- Status badge uses distinct terminal styling (e.g. grey for Closed, amber for Cancelled).
+
+### Disabled / hidden controls
+
+| Control | Behaviour |
+|---------|-----------|
+| Edit / Save | Hidden |
+| Status action buttons | Hidden (none in `allowedStatuses`) |
+| Comment form | Hidden |
+| Field inputs | Read-only text display |
+
+### Still visible
+
+- All ticket fields and metadata.
+- Existing `comments[]` history (read-only).
+- Back navigation to list.
+
+If a stale client attempts a mutation and receives `422 TERMINAL_TICKET_READ_ONLY`, refetch detail and switch to terminal presentation.
+
+---
+
+## 6. Error state handling (cross-screen)
+
+All errors use `ErrorResponse` from `api-contract.md`:
+
+```json
+{ "error": { "code": "...", "message": "...", "details": [...] } }
+```
+
+### Mapping by code
+
+| HTTP | `error.code` | Global behaviour | Screen-specific |
+|------|--------------|------------------|-----------------|
+| `400` | `VALIDATION_ERROR` | — | Map `details[].field` → inline field errors; generic banner if no field match |
+| `400` | `INVALID_ACTING_USER` | Header alert | Block submit until user re-selected |
+| `404` | `NOT_FOUND` | — | Detail: not-found page; list refetch unlikely |
+| `409` | `STATUS_CONFLICT` | — | Detail status actions: “Ticket was updated by someone else” → auto-refetch `GET /tickets/:id` → user retries transition with fresh `expectedStatus` |
+| `422` | `INVALID_STATUS_TRANSITION` | — | Banner on detail; refetch to resync `allowedStatuses` (button should disappear) |
+| `422` | `TERMINAL_TICKET_READ_ONLY` | — | Banner; refetch → terminal presentation |
+| `500` | `INTERNAL_ERROR` | Generic “Something went wrong” | Retry button; preserve form input on failed POST/PATCH |
+| Network failure | — | “Unable to reach server” | Retry; preserve form input |
+
+### Optimistic concurrency flow (`409`)
+
+Applies to `PATCH /tickets/:id/status` only in Core:
+
+```
+User clicks transition
+  → PATCH with expectedStatus = last known status
+  → 409 STATUS_CONFLICT
+  → auto GET /tickets/:id
+  → update UI from fresh data
+  → show message: "Status changed — please try again"
+  → user clicks transition again (now with correct expectedStatus)
+```
+
+Do **not** silently retry the transition without refetching — the user must confirm after seeing updated state.
+
+### Mutation in-flight UX
+
+- Disable submit / transition buttons while request pending.
+- On failure, re-enable and show error; do not navigate away on failed create.
+
+---
+
+## API quick reference (frontend)
+
+| Screen | Endpoints |
+|--------|-----------|
+| Global | `GET /api/users` |
+| List | `GET /api/tickets` |
+| Create | `POST /api/tickets` |
+| Detail | `GET /api/tickets/:id`, `PATCH /api/tickets/:id`, `PATCH /api/tickets/:id/status`, `POST /api/tickets/:id/comments` |
+
+Base URL: `http://localhost:3000/api` (dev). Mutating requests require `X-Acting-User-Id`.
+
+---
+
+## Out of scope (Core)
+
+- Authentication / login
+- Pagination, sorting, priority filter
+- Client-side transition validation or hardcoded transition maps
+- User management CRUD
+- Reopening terminal tickets
