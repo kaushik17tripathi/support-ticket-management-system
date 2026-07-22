@@ -304,3 +304,97 @@ file in isolation. This is the kind of gap that unit tests on individual functio
 wouldn't catch (assignedToId="" is a valid string, so type-level checks pass) but an
 integration test sending a real empty-string payload would expose immediately —
 motivates writing that exact test case in Step 12.
+
+## Prompt 9 — Integration test infrastructure
+**Prompt:** Set up integration test infrastructure for backend/tests/:
+
+1. Add a "test:integration" script to package.json: cross-env DATABASE_URL="file:./prisma/test.db"
+   vitest run tests/integration (install cross-env as a dev dependency for
+   cross-platform env var support)
+2. Create backend/tests/integration/setup.ts: a Vitest global setup that runs
+   `prisma migrate reset --force --skip-seed` against the test DB before the suite,
+   and seeds exactly 2 test users directly via Prisma (not the real seed.ts) so tests
+   have known, stable user IDs to reference.
+3. Create backend/tests/integration/testApp.ts: exports a configured Express app
+   (reusing the same route/middleware setup as src/index.ts, but without app.listen())
+   for Supertest to use directly.
+4. Add "database/seed-data/" note: test DB is separate from dev DB and is NOT part of
+   the seed data used for manual running/demoing the app.
+
+**AI Response Summary:** Created setup.ts (wipes test.db, runs migrate deploy, seeds
+2 fixed test users), testApp.ts (exports createApp() from new src/app.ts, extracted
+from index.ts), testUsers.ts (stable IDs), vitest.integration.config.ts (fileParallelism:
+false, globalSetup). Added @prisma/adapter-better-sqlite3 + better-sqlite3 as
+dependencies, unprompted.
+
+**Accepted:** Full infrastructure as generated, after verification.
+
+**Changed:** N/A
+
+**Rejected:** N/A
+
+**Note:** Explicitly questioned the two new dependencies rather than accepting them
+silently. Cursor's justification (Prisma 7 removed the built-in Rust query engine;
+SQLite now requires a driver adapter) was verified against actual code in
+lib/prisma.ts — the adapter is genuinely wired into every PrismaClient construction,
+not decorative. Confirmed via git history that this affects the whole backend, not
+just test infra, and predates/postdates [fill in once checked] the earlier dev-server
+verification steps.
+
+## Prompt 10 — Integration test suite
+**Prompt:** Create backend/tests/integration/tickets.test.ts using Supertest against testApp.ts.
+Use the 2 seeded test users' IDs from setup.ts. Cover, as real HTTP requests:
+
+STATE MACHINE (via API, not re-testing ticketStatusService directly):
+- Full happy path: create ticket -> OPEN -> IN_PROGRESS -> RESOLVED -> CLOSED, asserting
+  status and allowedStatuses at each step
+- One rejected transition (e.g. OPEN -> RESOLVED) returns 422 INVALID_STATUS_TRANSITION
+- A CLOSED ticket rejects a status change with 422 TERMINAL_TICKET_READ_ONLY, NOT 409,
+  even when expectedStatus is stale (proves check-order precedence from api-contract.md)
+- Stale expectedStatus on a non-terminal ticket returns 409 STATUS_CONFLICT
+
+VALIDATION:
+- Create ticket missing title -> 400 VALIDATION_ERROR with field-level details
+- Create ticket with assignedToId: "" (empty string) -> 400 VALIDATION_ERROR
+  (regression test for the empty-string bug we fixed)
+- Create ticket with invalid priority -> 400
+- Missing X-Acting-User-Id header on a mutating request -> 400 INVALID_ACTING_USER
+
+TERMINAL READ-ONLY:
+- PATCH fields on a CLOSED ticket -> 422 TERMINAL_TICKET_READ_ONLY
+- POST comment on a CANCELLED ticket -> 422 TERMINAL_TICKET_READ_ONLY
+
+COMMENTS:
+- Add comment to non-terminal ticket -> 201, appears in GET ticket detail comments array
+- Empty message -> 400
+
+SEARCH / FILTER:
+- Case-insensitive search matches (e.g. search "login" matches title "Login Issue")
+- Search with special characters (%, _, backslash) in the query does NOT throw a
+  server error and returns correct (possibly empty) results — this is the LIKE-escaping
+  verification, create a ticket with a literal "%" in the title first and confirm
+  searching for that literal "%" matches it, not a wildcard-expanded set
+- status filter combined with search
+- Empty search query returns all tickets (subject to status filter)
+
+Use descriptive test names. Reset only the data needed between tests (or accept full
+reset per test file if simpler) — don't let test order dependencies creep in.
+
+**AI Response Summary:** Generated 16 integration tests across state machine (4),
+validation (4), terminal read-only (2), comments (2), search/filter (4), covering
+every check-order precedence case and a rigorous LIKE-escaping test using decoy
+tickets to prove literal-character matching, not just absence of errors.
+
+**Accepted:** Full test suite as generated. Specifically verified the two highest-risk
+tests line-by-line: the terminal-vs-conflict precedence test asserts both the correct
+AND explicitly-not-the-wrong error code; the LIKE-escaping test creates decoy tickets
+that would incorrectly match under wildcard interpretation, proving true literal
+escaping rather than just absence of a server error.
+
+**Changed:** N/A
+
+**Rejected:** N/A
+
+**Note:** Ran both npm test (unit) and npm run test:integration for real, pasted actual
+terminal output for both rather than accepting Cursor's own "Verify" narration —
+consistent with the verification discipline established in Step 8.

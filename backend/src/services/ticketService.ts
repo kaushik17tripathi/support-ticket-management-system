@@ -95,10 +95,6 @@ export type UpdateTicketFieldsInput = {
   assignedToId?: string | null;
 };
 
-function escapeLikePattern(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
-}
-
 function isValidPriority(value: Priority): boolean {
   return Object.values(Priority).includes(value);
 }
@@ -295,6 +291,7 @@ export async function create(data: CreateTicketInput): Promise<TicketDetailDto> 
 
 /**
  * List tickets with optional case-insensitive search on title and description.
+ * Search uses literal substring matching so %, _, and \ are not treated as wildcards.
  */
 export async function list(params: {
   search?: string;
@@ -307,19 +304,19 @@ export async function list(params: {
     where.status = params.status;
   }
 
-  if (trimmedSearch) {
-    const search = escapeLikePattern(trimmedSearch);
-    // SQLite LIKE is case-insensitive for ASCII; `mode: insensitive` is not supported.
-    where.OR = [
-      { title: { contains: search } },
-      { description: { contains: search } },
-    ];
-  }
-
-  const tickets = await prisma.ticket.findMany({
+  let tickets = await prisma.ticket.findMany({
     where,
     include: ticketListInclude,
   });
+
+  if (trimmedSearch) {
+    const needle = trimmedSearch.toLowerCase();
+    tickets = tickets.filter(
+      (ticket) =>
+        ticket.title.toLowerCase().includes(needle) ||
+        ticket.description.toLowerCase().includes(needle),
+    );
+  }
 
   const data = tickets.map(toTicketListItemDto);
 

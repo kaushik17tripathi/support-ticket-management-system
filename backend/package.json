@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "test": "vitest run",
+    "test:integration": "cross-env DATABASE_URL=file:./prisma/test.db vitest run --config vitest.integration.config.ts tests/integration",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "ts-node prisma/seed.ts"
@@ -29,6 +30,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^26.1.1",
     "@types/supertest": "^7.2.1",
+    "cross-env": "^10.1.0",
     "prisma": "^7.9.0",
     "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
