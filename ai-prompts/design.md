@@ -89,3 +89,37 @@ flagged in implementation-plan.md by design, not by later correction.
 **Changed:** N/A
 
 **Rejected:** N/A
+
+## Prompt 4 — Design notes synthesis
+**Prompt:** Synthesize design-notes.md from data-model.md, api-contract.md, and
+ui-flow.md using this template:
+
+## Architecture Overview (frontend, backend, database)
+## Frontend Design
+## Backend Design
+## Database Design
+## Validation Strategy
+## Error Handling Strategy
+## Testing Strategy Link
+
+This should be a concise synthesis, not a re-statement of the other three docs in full —
+reference them rather than duplicate content. Explicitly summarize: the single-source-of-truth
+principle for the state machine (backend service, mirrored not duplicated in UI), the
+error code taxonomy from api-contract.md, and how the check-order decisions map to the
+service-layer structure you'll build (e.g., one authoritative TicketStatusService).
+
+**AI Response Summary:** Produced a synthesis linking all three design docs via a table,
+an architecture diagram, and six sections. Notably translated api-contract.md's check-order
+tables into concrete service-method pseudocode (TicketService.updateFields,
+.transitionStatus, CommentService.create) with numbered early-return guards matching the
+documented sequences exactly — providing a direct bridge to the Step 6 implementation.
+
+**Accepted:** Full document as generated.
+
+**Changed:** N/A
+
+**Rejected:** N/A
+
+**Note:** This doc's service-method breakdown will be used as the actual scaffold for
+ticketStatusService.ts, ticketService.ts, and commentService.ts in Step 6 — direct
+design-to-implementation traceability.
