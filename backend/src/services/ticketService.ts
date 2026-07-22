@@ -271,7 +271,7 @@ export async function create(data: CreateTicketInput): Promise<TicketDetailDto> 
 
   await assertUserExists(data.createdById, "createdById");
 
-  if (validated.assignedToId) {
+  if (validated.assignedToId !== null && validated.assignedToId !== undefined) {
     await assertUserExists(validated.assignedToId, "assignedToId");
   }
 
@@ -281,7 +281,10 @@ export async function create(data: CreateTicketInput): Promise<TicketDetailDto> 
       description: validated.description,
       priority: validated.priority,
       status: TicketStatus.OPEN,
-      assignedToId: validated.assignedToId ?? null,
+      assignedToId:
+        validated.assignedToId !== undefined && validated.assignedToId !== null
+          ? validated.assignedToId
+          : null,
       createdById: data.createdById,
     },
     include: ticketDetailInclude,
@@ -356,7 +359,7 @@ export async function updateFields(
     );
   }
 
-  if (validated.assignedToId) {
+  if (validated.assignedToId !== null && validated.assignedToId !== undefined) {
     await assertUserExists(validated.assignedToId, "assignedToId");
   }
 

@@ -244,3 +244,63 @@ surface a raw Prisma FK constraint error to the API consumer, violating the erro
 taxonomy in api-contract.md. Traced by explicitly asking Cursor to reconcile behavior
 between two services rather than reviewing each file in isolation — cross-file
 consistency checks catch things single-file review misses.
+
+## Prompt 7 — Routes + Zod validation layer (initial generation)
+**Prompt:** Create the Express route layer for the Support Ticket Management System backend,
+wiring up ticketService.ts and commentService.ts per api-contract.md exactly.
+
+1. backend/src/middleware/actingUser.ts — middleware that reads X-Acting-User-Id
+   header, validates it exists and references a real user (reuse userValidation.ts),
+   attaches req.actingUserId, and throws AppError("INVALID_ACTING_USER", 400, ...) if
+   missing or invalid. Apply only to mutating routes.
+
+2. backend/src/middleware/errorHandler.ts — centralized Express error middleware that
+   catches AppError instances and formats them as { error: { code, message, details } }
+   with the correct status code. Catches unknown errors as 500 INTERNAL_ERROR without
+   leaking stack traces in the response body (still log them server-side).
+
+3. backend/src/validation/ticketValidation.ts — Zod schemas for:
+   - createTicketSchema (title, description, priority required; assignedToId optional
+     nullable string)
+   - updateTicketSchema (all fields optional but at least one required — refine this)
+   - transitionStatusSchema (status, expectedStatus both required valid TicketStatus enums)
+   - listTicketsQuerySchema (search optional string, status optional valid TicketStatus enum)
+   - createCommentSchema (message required non-empty string)
+
+4. backend/src/routes/users.ts — GET /users (list all users, no auth needed)
+
+5. backend/src/routes/tickets.ts — wire up:
+   GET /tickets (list, query validated by listTicketsQuerySchema)
+   POST /tickets (create, body validated by createTicketSchema, actingUser middleware)
+   GET /tickets/:id (detail)
+   PATCH /tickets/:id (update fields, body validated by updateTicketSchema, actingUser middleware)
+   PATCH /tickets/:id/status (transition, body validated by transitionStatusSchema, actingUser middleware)
+   POST /tickets/:id/comments (create comment, body validated by createCommentSchema, actingUser middleware)
+
+6. Wire everything into src/index.ts: mount routers under /api, apply errorHandler as
+   the last middleware.
+
+Route handlers should be thin — parse/validate, call the service, return the response
+shape from api-contract.md. Business logic stays in the services.
+**AI Response Summary:** Generated actingUser middleware, errorHandler, validateBody/
+validateQuery Zod middleware, ticketValidation.ts schemas, users.ts and tickets.ts
+routers, and wired everything into index.ts. Check-order sequencing at the route level
+correctly matched api-contract.md across all 4 mutating endpoints.
+
+**Accepted:** Middleware structure, error handling, check-order sequencing at the
+route level, response shape wrapping.
+
+**Changed:** Found that assignedToId="" bypasses application-level validation via a
+truthy check in ticketService (if (validated.assignedToId)) combined with the Zod
+schema not rejecting empty strings, and ?? not catching falsy-but-defined values —
+resulting in a raw Prisma FK error surfacing as an uncontrolled 500 instead of a clean
+400. Fixed via explicit null/undefined checks and a Zod refine rejecting empty strings.
+
+**Rejected:** N/A
+
+**Note:** Traced this by mentally executing the empty-string case through Zod parsing
+-> service truthy check -> ?? operator -> Prisma call, rather than just reading each
+file in isolation. This is the kind of gap that unit tests on individual functions
+wouldn't catch (assignedToId="" is a valid string, so type-level checks pass) but an
+integration test sending a real empty-string payload would expose immediately —
+motivates writing that exact test case in Step 12.
