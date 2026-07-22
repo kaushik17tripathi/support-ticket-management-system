@@ -187,6 +187,9 @@ Integration tests use a separate `test.db` and fixed test users — not dev seed
 | [implementation-plan.md](./implementation-plan.md) | Task breakdown |
 | [test-strategy.md](./test-strategy.md) | Testing approach and coverage |
 | [test-results.md](./test-results.md) | Latest verified test run output |
+| [debugging-notes.md](./debugging-notes.md) | Issues investigated and fixes |
+| [code-review-notes.md](./code-review-notes.md) | Review observations and rejected suggestions |
+| [review-fixes.md](./review-fixes.md) | Commit-level fix mapping |
 | [ai-prompts/](./ai-prompts/) | Prompt history by lifecycle phase |
 
 ## Current status
