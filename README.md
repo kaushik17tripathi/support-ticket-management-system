@@ -193,6 +193,8 @@ Integration tests use a separate `test.db` and fixed test users — not dev seed
 | [pr-description.md](./pr-description.md) | PR / submission summary |
 | [reflection.md](./reflection.md) | AI workflow reflection |
 | [final-ai-usage-summary.md](./final-ai-usage-summary.md) | AI usage rollup |
+| [tool-workflow.md](./tool-workflow.md) | Part A AI workflow foundation |
+| [manual-qa-walkthrough.md](./manual-qa-walkthrough.md) | Structured UI QA script |
 | [ai-prompts/](./ai-prompts/) | Prompt history by lifecycle phase |
 
 ## Current status
@@ -202,8 +204,8 @@ Integration tests use a separate `test.db` and fixed test users — not dev seed
 - [x] Dev database seed data
 - [x] Frontend (React + Vite) per ui-flow.md
 - [x] Submission artifacts (PR description, reflection, AI usage summary)
-- [ ] End-to-end manual QA pass against acceptance-criteria.md
-- [ ] `tool-workflow.md` (Part A workflow essay)
+- [x] `tool-workflow.md` (Part A) + `manual-qa-walkthrough.md`
+- [ ] End-to-end manual QA pass — follow `manual-qa-walkthrough.md`, tick `acceptance-criteria.md`
 
 ## License
 

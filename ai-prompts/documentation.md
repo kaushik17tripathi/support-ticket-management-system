@@ -40,4 +40,26 @@ summary). Updated README doc index and status.
 
 **Rejected:** N/A
 
-**Note:** Honest about remaining gaps (manual QA, tool-workflow.md Part A, no E2E/persistence automation).
+**Note:** Honest about remaining gaps (manual QA sign-off, no E2E/persistence automation).
+
+---
+
+## Prompt 3 — Tool workflow and manual QA walkthrough
+
+**Prompt:**
+
+Yes — help with tool-workflow.md (Part A) and structured manual QA walkthrough.
+
+**AI Response Summary:** Wrote `tool-workflow.md` (all Part A sections: context, requirements
+through reuse), `manual-qa-walkthrough.md` (sections A–I with acceptance-criteria refs),
+and populated `tool-specific/cursor-workflow/` stubs (project-context, spec, tasks,
+cursor-rules, acceptance-criteria pointer).
+
+**Accepted:** Full Part A workflow doc and actionable QA script with sign-off table.
+
+**Changed:** N/A
+
+**Rejected:** N/A
+
+**Note:** QA walkthrough references real seeded data (e.g. Login Issue search) and optional
+409 two-tab simulation for concurrency UI behavior.

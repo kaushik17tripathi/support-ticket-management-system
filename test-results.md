@@ -117,7 +117,9 @@ TypeScript strict check and production bundle succeed. No automated UI/E2E suite
 
 ## Manual QA (pending formal sign-off)
 
-The following `acceptance-criteria.md` items rely on manual verification with both servers running:
+Use **[manual-qa-walkthrough.md](./manual-qa-walkthrough.md)** — structured steps A–I mapping to `acceptance-criteria.md`.
+
+The following items rely on manual verification with both servers running:
 
 - [ ] Acting-user dropdown persists across reload (`localStorage`)
 - [ ] UI status buttons match `allowedStatuses` only (no client-side state machine)
