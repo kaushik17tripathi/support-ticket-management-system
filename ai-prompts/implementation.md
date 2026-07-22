@@ -106,3 +106,40 @@ principle. The module correctly avoided drift relative to the rest of the app (r
 consume it, not their own copies) but had latent drift risk *within itself* between two
 representations of the same fact. This is subtler than a typical bug and worth flagging
 as a maintainability catch, not just a correctness catch.
+
+## Prompt 4 — Unit tests for TicketStatusService
+**Prompt:** Create backend/tests/ticketStatusService.test.ts using Vitest, testing every function
+in src/services/ticketStatusService.ts exhaustively:
+
+canTransition — one test per valid transition (5 total) asserting true, AND one test
+per rejected transition class from api-contract.md asserting false:
+- Skip-ahead: OPEN->RESOLVED, OPEN->CLOSED, IN_PROGRESS->CLOSED
+- Backward/reopen: IN_PROGRESS->OPEN, RESOLVED->OPEN, RESOLVED->IN_PROGRESS
+- Late cancel: RESOLVED->CANCELLED
+- Terminal outbound: CLOSED->OPEN, CLOSED->IN_PROGRESS, CLOSED->RESOLVED, CLOSED->CANCELLED,
+  CANCELLED->OPEN, CANCELLED->IN_PROGRESS, CANCELLED->RESOLVED, CANCELLED->CLOSED
+- Same-state: OPEN->OPEN, IN_PROGRESS->IN_PROGRESS, RESOLVED->RESOLVED,
+  CLOSED->CLOSED, CANCELLED->CANCELLED
+
+getAllowedTransitions — one test per status asserting the exact expected array
+(order-independent comparison), including empty arrays for CLOSED and CANCELLED.
+
+isTerminal — one test per status: true for CLOSED/CANCELLED, false for the other three.
+
+Use descriptive test names (e.g., "rejects OPEN -> RESOLVED (skip-ahead)") so failures
+are immediately diagnosable. Do not use loops/table-driven generation that would hide
+which specific case failed — each transition gets its own explicit test() call.
+
+**AI Response Summary:** Generated 35 explicit, individually-named tests across
+canTransition (25: 5 valid + 20 rejected across all 5 rejection classes),
+getAllowedTransitions (5), and isTerminal (5). Used a toHaveLength + arrayContaining
+helper for order-independent, exact-set array comparison.
+
+**Accepted:** Full test file — verified test count against acceptance-criteria.md's
+explicit transition list (all 5 valid, all rejected classes present, no gaps or
+duplicates), confirmed no table-driven loops, ran npm test independently rather than
+trusting Cursor's own "all passing" summary.
+
+**Changed:** N/A
+
+**Rejected:** N/A
