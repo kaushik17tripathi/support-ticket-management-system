@@ -190,6 +190,9 @@ Integration tests use a separate `test.db` and fixed test users — not dev seed
 | [debugging-notes.md](./debugging-notes.md) | Issues investigated and fixes |
 | [code-review-notes.md](./code-review-notes.md) | Review observations and rejected suggestions |
 | [review-fixes.md](./review-fixes.md) | Commit-level fix mapping |
+| [pr-description.md](./pr-description.md) | PR / submission summary |
+| [reflection.md](./reflection.md) | AI workflow reflection |
+| [final-ai-usage-summary.md](./final-ai-usage-summary.md) | AI usage rollup |
 | [ai-prompts/](./ai-prompts/) | Prompt history by lifecycle phase |
 
 ## Current status
@@ -198,7 +201,9 @@ Integration tests use a separate `test.db` and fixed test users — not dev seed
 - [x] State machine with integration tests
 - [x] Dev database seed data
 - [x] Frontend (React + Vite) per ui-flow.md
+- [x] Submission artifacts (PR description, reflection, AI usage summary)
 - [ ] End-to-end manual QA pass against acceptance-criteria.md
+- [ ] `tool-workflow.md` (Part A workflow essay)
 
 ## License
 
