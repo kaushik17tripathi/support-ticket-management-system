@@ -1,0 +1,393 @@
+openapi: 3.0.3
+info:
+  title: Support Ticket Management System API
+  description: |
+    REST API for the Support Ticket Management System.
+    Full behavioral contract (check orders, validation sequences) is in `api-contract.md`.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development
+
+tags:
+  - name: Users
+  - name: Tickets
+  - name: Comments
+
+paths:
+  /users:
+    get:
+      tags: [Users]
+      summary: List seeded users (acting-user dropdown)
+      responses:
+        "200":
+          description: Seeded users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserSummary"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /tickets:
+    get:
+      tags: [Tickets]
+      summary: List tickets with search and status filter
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Case-insensitive keyword search on title and description
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/TicketStatus"
+      responses:
+        "200":
+          description: Matching tickets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TicketListItem"
+                  meta:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Tickets]
+      summary: Create ticket
+      parameters:
+        - $ref: "#/components/parameters/ActingUserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTicketRequest"
+      responses:
+        "201":
+          description: Ticket created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /tickets/{id}:
+    get:
+      tags: [Tickets]
+      summary: Get ticket with comments and allowed status transitions
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+      responses:
+        "200":
+          description: Ticket detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    patch:
+      tags: [Tickets]
+      summary: Update ticket fields (non-terminal only)
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+        - $ref: "#/components/parameters/ActingUserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTicketRequest"
+      responses:
+        "200":
+          description: Ticket updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/TerminalReadOnly"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /tickets/{id}/status:
+    patch:
+      tags: [Tickets]
+      summary: Change ticket status (optimistic concurrency)
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+        - $ref: "#/components/parameters/ActingUserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeStatusRequest"
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketDetail"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/StatusConflict"
+        "422":
+          $ref: "#/components/responses/InvalidTransition"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /tickets/{id}/comments:
+    post:
+      tags: [Comments]
+      summary: Add comment to non-terminal ticket
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+        - $ref: "#/components/parameters/ActingUserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCommentRequest"
+      responses:
+        "201":
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/TerminalReadOnly"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  parameters:
+    TicketId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    ActingUserId:
+      name: X-Acting-User-Id
+      in: header
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    Priority:
+      type: string
+      enum: [LOW, MEDIUM, HIGH, CRITICAL]
+
+    TicketStatus:
+      type: string
+      enum: [OPEN, IN_PROGRESS, RESOLVED, CLOSED, CANCELLED]
+
+    UserSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+
+    TicketListItem:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        status:
+          $ref: "#/components/schemas/TicketStatus"
+        priority:
+          $ref: "#/components/schemas/Priority"
+        assignedTo:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/UserSummary"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: string
+        ticketId:
+          type: string
+        message:
+          type: string
+        createdBy:
+          $ref: "#/components/schemas/UserSummary"
+        createdAt:
+          type: string
+          format: date-time
+
+    TicketDetail:
+      allOf:
+        - $ref: "#/components/schemas/TicketListItem"
+        - type: object
+          properties:
+            description:
+              type: string
+            createdBy:
+              $ref: "#/components/schemas/UserSummary"
+            allowedStatuses:
+              type: array
+              items:
+                $ref: "#/components/schemas/TicketStatus"
+            comments:
+              type: array
+              items:
+                $ref: "#/components/schemas/Comment"
+
+    CreateTicketRequest:
+      type: object
+      required: [title, description, priority]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          $ref: "#/components/schemas/Priority"
+        assignedToId:
+          type: string
+          nullable: true
+
+    UpdateTicketRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          $ref: "#/components/schemas/Priority"
+        assignedToId:
+          type: string
+          nullable: true
+
+    ChangeStatusRequest:
+      type: object
+      required: [status, expectedStatus]
+      properties:
+        status:
+          $ref: "#/components/schemas/TicketStatus"
+        expectedStatus:
+          $ref: "#/components/schemas/TicketStatus"
+
+    CreateCommentRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
+
+  responses:
+    ValidationError:
+      description: Validation or acting-user error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    StatusConflict:
+      description: Optimistic concurrency conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InvalidTransition:
+      description: Disallowed status transition
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    TerminalReadOnly:
+      description: Terminal ticket is read-only
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"

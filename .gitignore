@@ -19,6 +19,8 @@ backend/prisma/dev.db
 backend/prisma/dev.db-journal
 backend/prisma/test.db
 backend/prisma/test.db-journal
+backend/prisma/e2e.db
+backend/prisma/e2e.db-journal
 *.db
 *.db-journal
 !database/seed-data/**
@@ -39,6 +41,10 @@ frontend/.vite/
 # --- Test / coverage ---
 coverage/
 .nyc_output/
+e2e/test-results/
+e2e/playwright-report/
+e2e/blob-report/
+playwright-report/
 
 # --- Logs ---
 npm-debug.log*

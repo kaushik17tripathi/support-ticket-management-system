@@ -1,0 +1,26 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: file:./prisma/dev.db
+      PORT: "3000"
+    volumes:
+      - sqlite-data:/app/backend/prisma
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_PROXY: http://backend:3000
+    depends_on:
+      - backend
+
+volumes:
+  sqlite-data:

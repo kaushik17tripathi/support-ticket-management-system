@@ -8,10 +8,14 @@
   },
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "start:e2e": "cross-env DATABASE_URL=file:./prisma/e2e.db prisma migrate deploy && cross-env DATABASE_URL=file:./prisma/e2e.db ts-node prisma/seed.ts && cross-env DATABASE_URL=file:./prisma/e2e.db ts-node src/index.ts",
     "test": "vitest run",
     "test:integration": "cross-env DATABASE_URL=file:./prisma/test.db vitest run --config vitest.integration.config.ts tests/integration",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "ts-node prisma/seed.ts"
   },
   "keywords": [],
