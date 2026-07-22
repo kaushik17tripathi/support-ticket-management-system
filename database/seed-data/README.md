@@ -1,6 +1,29 @@
 # Seed Data
 
-Application seed data for local development and manual demo runs lives in `backend/prisma/seed.ts` and is applied via `npm run db:seed` against the **dev** database (`backend/prisma/dev.db` by default).
+Application seed data for local development and manual demo runs lives in:
+
+- **`database/seed-data/devSeedData.ts`** — stable record definitions (users, tickets, comments)
+- **`backend/prisma/seed.ts`** — idempotent upsert runner (`npm run db:seed`)
+
+Applied against the **dev** database (`backend/prisma/dev.db` by default).
+
+## Dev seed contents
+
+| Entity | Count | Notes |
+|--------|------:|-------|
+| Users | 5 | Roles: `agent`, `admin`, `manager`, `engineer` |
+| Tickets | 10 | All five statuses; all four priorities; mix of assigned/unassigned |
+| Comments | 6 | On non-terminal tickets only (`OPEN`, `IN_PROGRESS`, `RESOLVED`) |
+
+Includes a **Login Issue** ticket for keyword-search demos and realistic titles/descriptions.
+
+Re-running `npm run db:seed` is safe — records are upserted by stable `id`, not wiped.
+
+```bash
+cd backend
+npm run db:migrate   # first time / after schema changes
+npm run db:seed
+```
 
 ## Test database (integration tests)
 

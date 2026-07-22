@@ -398,3 +398,31 @@ escaping rather than just absence of a server error.
 **Note:** Ran both npm test (unit) and npm run test:integration for real, pasted actual
 terminal output for both rather than accepting Cursor's own "Verify" narration —
 consistent with the verification discipline established in Step 8.
+
+---
+
+## Prompt 12 — Dev database seed data
+
+**Prompt:**
+
+Let's continue with seed data for the dev database first (item 1 above).
+
+Several users with varied roles, ~8-10 sample tickets across different statuses/priorities,
+a few comments. Separate from test-only seeding in tests/integration/setup.ts.
+
+**AI Response Summary:** Created `database/seed-data/devSeedData.ts` with 5 users (agent,
+admin, manager, engineer roles), 10 tickets covering all five statuses and four priorities,
+and 6 comments on non-terminal tickets. Implemented idempotent upserts in
+`backend/prisma/seed.ts` using stable IDs and the Prisma 7 better-sqlite3 adapter.
+Updated `database/seed-data/README.md` with contents table and run instructions.
+
+**Accepted:** Seed data structure, upsert strategy, separation from integration test users,
+realistic demo titles (including "Login Issue" for search), comments only on non-terminal
+tickets per terminal read-only rules.
+
+**Changed:** N/A
+
+**Rejected:** N/A
+
+**Note:** Verified on clean DB: `prisma migrate deploy` then `npm run db:seed` twice —
+counts remain 5/10/6 (idempotent). Integration tests unaffected (separate test.db).
