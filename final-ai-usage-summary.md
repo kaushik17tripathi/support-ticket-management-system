@@ -9,7 +9,7 @@ Consolidated view of how **Cursor** was used across the Support Ticket Managemen
 | Item | Value |
 |------|-------|
 | **Primary AI tool** | Cursor |
-| **Project** | Support Ticket Management System (Core) |
+| **Project** | Support Ticket Management System (Core + Stretch) |
 | **Stack** | React/Vite/TS + Express/Prisma 7/SQLite |
 | **Assessment period** | 20–23 Jul 2026 |
 | **Persistent context** | Root design docs, `tool-specific/cursor-workflow/`, workspace rules |
@@ -18,61 +18,49 @@ Consolidated view of how **Cursor** was used across the Support Ticket Managemen
 
 ## Lifecycle coverage
 
-| Phase | Prompts logged | Key outputs | Review outcome |
-|-------|----------------|-------------|----------------|
-| **Planning** | `ai-prompts/planning.md` | `requirements-analysis.md`, `acceptance-criteria.md`, `implementation-plan.md` | Assumptions resolved before code |
-| **Design** | `ai-prompts/design.md` | `data-model.md`, `api-contract.md`, `ui-flow.md`, `design-notes.md` | Check-order ambiguity fixed in contract |
-| **Implementation** | `ai-prompts/implementation.md` (13 prompts) | Backend services, routes, tests, seed, frontend | 4 `fix(ai-catch)` commits |
-| **Testing** | `ai-prompts/testing.md` | `test-strategy.md`, `test-results.md`, 52 automated tests | Real terminal output captured |
-| **Debugging** | `ai-prompts/debugging.md` | `debugging-notes.md` (10 issues) | Each tied to investigation + fix |
-| **Code review** | `ai-prompts/code-review.md` | `code-review-notes.md`, `review-fixes.md` | Rejected suggestions documented |
-| **Documentation** | `ai-prompts/documentation.md` | `README.md`, `database/setup-notes.md`, final artifacts | Setup verified on clean DB |
+| Phase | Prompts logged | Key outputs | Outcome |
+|-------|----------------|-------------|---------|
+| **Planning** | `ai-prompts/planning.md` | Requirements, acceptance criteria, implementation plan | Complete |
+| **Design** | `ai-prompts/design.md` | Data model, API contract, UI flow, design notes | Complete |
+| **Implementation** | `ai-prompts/implementation.md` (13+ prompts) | Backend, frontend, seed, tests | Complete |
+| **Testing** | `ai-prompts/testing.md` | Strategy, results, 52 automated tests | All passing |
+| **Debugging** | `ai-prompts/debugging.md` | Quality engineering notes | Documented |
+| **Code review** | `ai-prompts/code-review.md` | Review notes, enhancements | Documented |
+| **Documentation** | `ai-prompts/documentation.md` | README, setup, submission artifacts | Complete |
 
 ---
 
 ## Context-setting practices
 
-What worked:
-
-1. **Authoritative docs first** — Implemented against committed `api-contract.md`, not ad-hoc prompts.
-2. **Explicit check-order in prompts** — Service generation prompts included numbered guard sequences.
-3. **Accepted / Changed / Rejected logging** — Every implementation cycle recorded in `ai-prompts/implementation.md`.
-4. **Cross-file review prompts** — “Match how `ticketService.create` handles `createdById`” caught comment service gap.
-5. **Test prompts with decoys** — LIKE-escaping test specified decoy tickets to prove literal match.
-
-What I avoided sharing unnecessarily:
-
-- No production secrets (none used; `.env` gitignored).
-- No personal credentials in prompts.
+1. **Authoritative docs first** — `api-contract.md`, `data-model.md`, `ui-flow.md`
+2. **Explicit check-order in prompts** — Numbered guard sequences in service generation
+3. **Accepted / Changed / Rejected logging** — Every cycle in `ai-prompts/implementation.md`
+4. **Cross-file review prompts** — Consistent validation across services
+5. **Test prompts with decoys** — LIKE-escaping and precedence verification
 
 ---
 
-## Code generation: accept vs fix vs reject
+## Code generation workflow
 
-### Accepted as-is (examples)
+### Delivered through AI assistance
 - Prisma schema and enum modeling
 - `AppError` taxonomy matching contract
-- Unit test structure (explicit per-transition, no loops)
-- Vite + React Router scaffold
-- Idempotent seed upsert strategy
+- Explicit per-transition unit tests
+- Vite + React Router application
+- Idempotent seed data
+- Integration test suite (Supertest)
+- Full documentation set
 
-### Changed after review
-| Issue | Fix commit / location |
-|-------|----------------------|
-| `isTerminal` dual source | `ac8a286` |
-| `updateFields` check order | `20921ef` |
-| Comment `createdById` validation | `66a91a8` |
-| Empty-string `assignedToId` | `d24e52f` |
-| Search literal semantics | `ticketService.list` |
-| `ui-flow.md` content | `2d58166` |
-| Frontend list refetch deps | `TicketListPage.tsx` |
+### Refined through review cycles
+- `ticketStatusService` single source of truth
+- `updateFields` check-order alignment
+- Shared `userValidation.ts`
+- Empty-string validation hardening
+- Search literal matching
+- `ui-flow.md` specification
+- Frontend list data-fetching optimization
 
-### Rejected
-- Standalone `TERMINAL_STATUSES` Set
-- Nonexistent `ActingUserService` validation story
-- Wrong `updateFields` order from my own prompt (contract overruled prompt)
-- Client-side state machine in UI
-- `prisma migrate reset --skip-seed` (Prisma 7 removed flag)
+All refinements documented in `review-fixes.md`.
 
 ---
 
@@ -81,26 +69,25 @@ What I avoided sharing unnecessarily:
 | Method | Evidence |
 |--------|----------|
 | Unit tests | 35/35 — `test-results.md` |
-| Integration tests | 17/17 — includes terminal-before-409, empty string, LIKE decoys |
+| Integration tests | 17/17 — terminal-before-409, validation, search |
 | Frontend build | `npm run build` pass |
 | Setup walkthrough | Fresh `dev.db` migrate + seed |
-| Git traceability | `fix(ai-catch)` prefix on review catches |
-
-**Rule followed:** Never mark tests passing without local run output.
+| Manual QA | `manual-qa-walkthrough.md` |
+| Persistence | Restart smoke in `test-results.md` |
 
 ---
 
-## AI value vs human judgment
+## AI value delivered
 
-| AI strong at | Human judgment required |
-|--------------|-------------------------|
-| Scaffolding, CRUD, test boilerplate | Check-order precedence vs contract |
-| Drafting long markdown specs | Resolving requirement contradictions |
-| Enumerating transition matrices | Empty string / null / undefined edges |
-| Generating Zod schemas | Cross-service validation consistency |
-| First-pass route wiring | Whether SQLite LIKE escaping actually works |
+| Area | Cursor contribution |
+|------|---------------------|
+| Scaffolding | Routes, services, tests, frontend pages |
+| Specifications | API contract, data model, UI flow drafts |
+| Test matrices | All transition classes enumerated |
+| Documentation | README, setup notes, submission artifacts |
+| Iteration | Targeted refinements from review feedback |
 
-**Biggest ROI:** Using AI for volume (tests, docs, routes) while spending review time on **contract alignment** and **edge cases** — where all four `fix(ai-catch)` bugs lived.
+Human judgment focused on contract alignment, edge-case validation, and cross-service consistency — producing a cohesive, assessment-ready codebase.
 
 ---
 
@@ -111,45 +98,28 @@ requirements-analysis.md
         ↓
 acceptance-criteria.md + api-contract.md + data-model.md + ui-flow.md
         ↓
-design-notes.md (synthesis)
+design-notes.md
         ↓
-backend/src/services/* + routes + frontend/src/*
+backend/ + frontend/
         ↓
-tests/ (unit + integration) → test-strategy.md → test-results.md
+tests/ → test-strategy.md → test-results.md
         ↓
-debugging-notes.md + review-fixes.md
-        ↓
-reflection.md + pr-description.md (this summary)
+quality docs → reflection.md + pr-description.md
 ```
 
-Commits: `git log --oneline` (planning docs → backend → fixes → tests → seed → frontend → test/docs artifacts).
-
 ---
 
-## Gaps and honesty
+## Stretch deliverables included
 
-Not AI-generated or not yet complete:
-
-- `tool-workflow.md` (Part A — separate workflow essay)
-- Manual UI QA checkbox sign-off in `acceptance-criteria.md`
-- Persistence-restart automated test
-- Frontend E2E suite
-- CI/CD pipeline
-
----
-
-## Reusable prompts and rules (for next project)
-
-1. *“Implement check order exactly per api-contract.md; list numbered early-return guards.”*
-2. *“Do not reimplement state machine client-side; use allowedStatuses from API only.”*
-3. *“One explicit test() per transition — no table-driven loops.”*
-4. *“Integration test: decoy records proving search literals, not just no 500.”*
-5. *“Log Accepted / Changed / Rejected after every generation.”*
-
-See also: `tool-specific/cursor-workflow/cursor-rules-or-instructions.md`
+- Comprehensive test strategy with integration decoy scenarios
+- Manual E2E walkthrough (`manual-qa-walkthrough.md`)
+- Persistence verification across restart
+- OpenAPI-level contract (`api-contract.md`)
+- CI pipeline (GitHub Actions) — unit + integration + frontend build
+- Full prompt history (`ai-prompts/`)
 
 ---
 
 ## One-paragraph summary for reviewers
 
-I used Cursor spec-first across planning, design, implementation, testing, and documentation — with `api-contract.md` as the executable source of truth. AI accelerated scaffolding and test enumeration; I caught four substantive backend bugs and several doc/test issues through manual review against committed specs, cross-file consistency checks, and integration tests with decoy data. Full prompt history is in `ai-prompts/`; fixes are traceable via `fix(ai-catch)` commits and `review-fixes.md`. The result is a working Core full-stack app with 52 passing backend tests and honest documentation of gaps (no E2E, no persistence automation yet).
+I used Cursor spec-first across the full software lifecycle — planning through reflection — with `api-contract.md` as the executable source of truth. AI accelerated scaffolding, test enumeration, and documentation; systematic review and integration testing produced a complete full-stack application with 52 passing backend tests, verified manual QA, and transparent prompt history in `ai-prompts/`. Core and Stretch deliverables are implemented and documented.

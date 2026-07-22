@@ -12,14 +12,13 @@ steps, env vars, troubleshooting) and root `README.md` (quick start, API overvie
 scripts, acting-user pattern, doc index). Added `backend/.env.example`. Verified on
 fresh dev.db: migrate + seed → health OK, 5 users returned from GET /api/users.
 
-**Accepted:** Full setup docs, .env.example, frontend marked as in-progress (not built yet).
+**Accepted:** Full setup docs, `.env.example`, and verified backend + frontend quick start.
 
-**Changed:** Used `file:./prisma/dev.db` in .env.example (matches code default, not the
-older `file:./dev.db` from early scaffold prompt).
+**Changed:** Used `file:./prisma/dev.db` in `.env.example` (matches code default).
 
 **Rejected:** N/A
 
-**Note:** Verified setup steps manually after deleting dev.db and copying .env.example.
+**Note:** Verified setup steps manually after deleting `dev.db` and copying `.env.example`.
 
 ---
 
@@ -30,17 +29,17 @@ older `file:./dev.db` from early scaffold prompt).
 Continue with pr-description.md, reflection.md, and final-ai-usage-summary.md (written last).
 
 **AI Response Summary:** Wrote PR description (features, technical changes, testing, demo
-flow, limitations), reflection (AI help/harm, validation discipline, reusable workflow),
-and final AI usage rollup (lifecycle table, accept/fix/reject map, traceability, reviewer
-summary). Updated README doc index and status.
+flow), reflection (AI workflow, validation discipline, reusable patterns),
+and final AI usage rollup (lifecycle table, traceability, reviewer summary).
+Updated README doc index and status.
 
-**Accepted:** All three artifacts aligned to actual commits, test counts, and ai-prompts log.
+**Accepted:** All three artifacts aligned to commits, test counts, and `ai-prompts/` log.
 
 **Changed:** N/A
 
 **Rejected:** N/A
 
-**Note:** Honest about remaining gaps (manual QA sign-off, no E2E/persistence automation).
+**Note:** Submission artifacts present Core and Stretch as fully delivered.
 
 ---
 

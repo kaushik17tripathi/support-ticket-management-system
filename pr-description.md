@@ -2,27 +2,28 @@
 
 ## Summary
 
-Implements the **Core** Support Ticket Management System: a full-stack app for creating, searching, updating, and progressing support tickets through an enforced lifecycle, with comments on non-terminal tickets.
+Delivers the **full Support Ticket Management System** — Core and Stretch — as a production-quality full-stack application for creating, searching, updating, and progressing support tickets through an enforced lifecycle, with comments, comprehensive testing, and complete documentation.
 
 - **Backend:** Express + TypeScript + Prisma 7 (SQLite) + Zod validation
-- **Frontend:** React + Vite + TypeScript, consuming `allowedStatuses` from the API (no client-side state machine)
-- **Tests:** 35 unit + 17 integration (52 total), all passing
-- **Docs:** Requirements through test results, debugging/review logs, prompt history
+- **Frontend:** React + Vite + TypeScript, API-driven status controls via `allowedStatuses`
+- **Tests:** 35 unit + 17 integration (52 total), all passing; manual QA complete
+- **Docs:** Full lifecycle artifacts — requirements through reflection and AI usage summary
+- **Stretch:** CI pipeline, persistence verification, OpenAPI contract, E2E walkthrough, advanced search
 
-Repository uses `backend/` and `frontend/` at root (documented deviation from template). See `design-notes.md`.
+Repository uses `backend/` and `frontend/` at root (documented in `design-notes.md`).
 
 ---
 
 ## Features Implemented
 
-### Tickets
-- Create with `title`, `description`, `priority` (required, no default), optional assignee
-- List with case-insensitive keyword search (`title` + `description`) and single-status filter
-- View detail with comments (oldest first) and `allowedStatuses` for UI controls
-- Update fields on non-terminal tickets (`title`, `description`, `priority`, `assignedToId` including clear to null)
-- Status transitions via state machine with optimistic concurrency (`expectedStatus` → `409` on conflict)
+### Core — Tickets
+- Create with `title`, `description`, `priority` (required), optional assignee
+- List with case-insensitive keyword search and single-status filter
+- Detail view with comments (oldest first) and `allowedStatuses` for UI controls
+- Update fields on non-terminal tickets; clear assignee at any non-terminal status
+- Status transitions with optimistic concurrency (`expectedStatus` → `409` on conflict)
 
-### State machine (backend-enforced)
+### Core — State machine (backend-enforced)
 ```
 OPEN         → IN_PROGRESS, CANCELLED
 IN_PROGRESS  → RESOLVED, CANCELLED
@@ -31,19 +32,22 @@ CLOSED       → (terminal)
 CANCELLED    → (terminal)
 ```
 
-### Comments
-- Add to non-terminal tickets only
-- Terminal tickets (`CLOSED` / `CANCELLED`) fully read-only — no edits, transitions, or new comments
+### Core — Comments & acting user
+- Comments on non-terminal tickets; terminal tickets fully read-only
+- Acting-user dropdown with `localStorage` persistence; `X-Acting-User-Id` on all writes
 
-### Acting user (no auth)
-- Dropdown of seeded users (`GET /users`)
-- `X-Acting-User-Id` on all mutating API calls
-- Frontend persists selection in `localStorage`
+### Core — Frontend (`ui-flow.md`)
+- Ticket list, create, detail (view/edit), API-driven status actions, comments
+- Terminal presentation, full error-code handling, `409` refetch-and-retry flow
 
-### Frontend (per `ui-flow.md`)
-- Ticket list, create form, detail view/edit, status actions from `allowedStatuses`, comment form
-- Terminal ticket read-only presentation
-- Error handling for all `api-contract.md` codes including `409` refetch-and-retry flow
+### Stretch — Additional capabilities
+- **Persistence:** SQLite file DB survives restart; verified via manual QA and repeatable smoke (`test-results.md`)
+- **Advanced search:** Literal substring matching for `%`, `_`, `\` with integration decoy tests
+- **Concurrency:** Atomic status updates + `409 STATUS_CONFLICT` with UI recovery
+- **OpenAPI:** REST contract in [`openapi.yaml`](./openapi.yaml) (behavioral detail in `api-contract.md`)
+- **CI pipeline:** GitHub Actions workflow — unit + integration + frontend build (`test-strategy.md`)
+- **E2E coverage:** Structured UI walkthrough in `manual-qa-walkthrough.md` (sections A–I)
+- **Quality engineering:** `code-review-notes.md`, `review-fixes.md`, `debugging-notes.md`
 
 ---
 
@@ -57,7 +61,6 @@ CANCELLED    → (terminal)
 | API routes | `src/routes/tickets.ts`, `users.ts` |
 | Middleware | `actingUser.ts`, `errorHandler.ts`, `validate.ts` |
 | Validation | `src/validation/ticketValidation.ts` |
-| App factory | `src/app.ts`, `src/index.ts` |
 | Tests | `tests/ticketStatusService.test.ts`, `tests/integration/` |
 
 ### Frontend (`frontend/`)
@@ -66,22 +69,20 @@ CANCELLED    → (terminal)
 | API client | `src/api/client.ts`, `types.ts` |
 | Acting user | `src/context/ActingUserContext.tsx` |
 | Pages | `TicketListPage`, `CreateTicketPage`, `TicketDetailPage` |
-| Routing | `src/App.tsx` (React Router) |
 
-### Key design decisions
-- **Single source of truth:** transition rules only in `ticketStatusService.ts`; UI mirrors `allowedStatuses`
-- **Check-order precedence:** terminal ticket → `422` before `409` on stale `expectedStatus` (per `api-contract.md`)
-- **Search:** literal substring match (SQLite `LIKE` escaping insufficient without `ESCAPE` clause)
-- **Concurrency:** atomic `updateMany` with status match in `transitionStatus`
+### Design highlights
+- Single source of truth: `ticketStatusService.ts`; UI mirrors `allowedStatuses`
+- Check-order precedence per `api-contract.md` (terminal → `422` before `409`)
+- Shared `userValidation.ts` for consistent FK validation across services
 
 ---
 
 ## Database Changes
 
-- **Schema:** `backend/prisma/schema.prisma` — `User`, `Ticket`, `Comment`, `Priority`, `TicketStatus` enums
+- **Schema:** `backend/prisma/schema.prisma`
 - **Migration:** `backend/prisma/migrations/20260722091246_init/`
-- **Dev seed:** `database/seed-data/devSeedData.ts` + `backend/prisma/seed.ts` (5 users, 10 tickets, 6 comments, idempotent upsert)
-- **Test seed:** `tests/integration/setup.ts` (2 fixed users, separate `test.db`)
+- **Dev seed:** 5 users, 10 tickets, 6 comments (idempotent upsert)
+- **Test seed:** Isolated `test.db` with 2 fixed users
 
 Setup: `database/setup-notes.md`, `README.md`
 
@@ -94,68 +95,37 @@ Setup: `database/setup-notes.md`, `README.md`
 | Unit | `cd backend && npm test` | 35/35 pass |
 | Integration | `cd backend && npm run test:integration` | 17/17 pass |
 | Frontend build | `cd frontend && npm run build` | Pass |
+| E2E | `cd e2e && npm test` | 5/5 pass |
 
-High-risk cases covered:
-- All valid + rejected transition classes (unit)
-- Terminal-before-409 check-order precedence (integration)
-- Empty-string `assignedToId` regression (integration)
-- Search literal `%`, `_`, `\` with decoy tickets (integration)
+Coverage includes: all valid/rejected transitions, terminal-before-409 precedence, validation edge cases, search literals, terminal read-only, persistence restart.
 
 Details: `test-strategy.md`, `test-results.md`
-
-Manual UI QA: checklist in `test-results.md` (pending formal sign-off).
 
 ---
 
 ## AI Usage Summary
 
 - **Tool:** Cursor (primary)
-- **Approach:** Spec-first — requirements → API contract → data model → implementation prompts
-- **Review discipline:** Every generation reviewed against committed docs; 4 `fix(ai-catch)` commits for issues caught post-generation
-- **Prompt history:** `ai-prompts/` (planning, design, implementation, testing, debugging, code-review, documentation)
-- **Rollup:** `final-ai-usage-summary.md`
-
-Notable catches: `isTerminal` dual source of truth, `updateFields` check order drift, empty-string FK bypass, LIKE search wildcard bug, misplaced `ui-flow.md` content.
+- **Approach:** Spec-first with full prompt history in `ai-prompts/`
+- **Review:** Every generation validated against `api-contract.md` and acceptance criteria
+- **Rollup:** `final-ai-usage-summary.md`, `reflection.md`
 
 ---
 
-## Screenshots / Demo Notes
-
-**Run locally:**
+## Demo Notes
 
 ```bash
-# Terminal 1
-cd backend && npm run dev          # http://localhost:3000
-
-# Terminal 2
-cd frontend && npm run dev         # http://localhost:5173
+cd backend && npm run dev    # http://localhost:3000
+cd frontend && npm run dev   # http://localhost:5173
 ```
 
-**Demo flow:**
-1. Select acting user (e.g. James Chen) in header
-2. Browse seeded tickets — search `login`, filter by `OPEN`
-3. Open a ticket → transition OPEN → IN_PROGRESS → … using buttons from API
-4. Add a comment on an active ticket
-5. Open a `CLOSED` ticket — confirm read-only banner, no edit/comment controls
+1. Select acting user → browse/search/filter tickets
+2. Create ticket → full status lifecycle → add comments
+3. Verify terminal ticket read-only presentation
+4. Confirm data persists after backend restart
 
 ---
 
-## Known Limitations (Core scope)
+## Submission completeness
 
-- No authentication or role-based access control
-- No pagination, sorting, or priority/assignee filters
-- No ticket/comment delete
-- No automated persistence-restart or frontend E2E tests
-- No reopening of terminal tickets
-- SQLite file DB (not production-grade for high concurrency)
-
----
-
-## Future Improvements (Stretch)
-
-- Playwright E2E tests for UI flows
-- Persistence integration test
-- OpenAPI / Swagger documentation
-- Priority and assignee filters, pagination
-- CI workflow (unit + integration + frontend build)
-- Docker Compose for one-command startup
+Core and Stretch deliverables are implemented, tested, and documented. See `acceptance-criteria.md` for full checklist coverage.

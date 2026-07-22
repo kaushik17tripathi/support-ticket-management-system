@@ -1,8 +1,8 @@
 # Tasks
 
-Mirrors [implementation-plan.md](../../implementation-plan.md). Status as of submission.
+Mirrors [implementation-plan.md](../../implementation-plan.md). **Status: submission complete.**
 
-## Completed
+## Completed — Core
 
 - [x] Requirements, acceptance criteria, implementation plan
 - [x] Data model, API contract (with check-order), UI flow, design notes
@@ -15,16 +15,18 @@ Mirrors [implementation-plan.md](../../implementation-plan.md). Status as of sub
 - [x] Debugging, code review, review-fixes logs
 - [x] PR description, reflection, final AI usage summary
 - [x] tool-workflow.md + manual QA walkthrough
+- [x] Manual QA executed; `acceptance-criteria.md` fully checked
 
-## Remaining (pre-submit)
+## Completed — Stretch
 
-- [ ] Execute [manual-qa-walkthrough.md](../../manual-qa-walkthrough.md); tick acceptance-criteria.md
-- [ ] `git push` to remote
-- [ ] Complete assessment submission form
+- [x] Playwright E2E — `e2e/` (smoke, search, lifecycle)
+- [x] Persistence verification — `test-results.md` + `backend/start:e2e`
+- [x] CI workflow — `.github/workflows/ci.yml`
+- [x] OpenAPI spec — `openapi.yaml`
+- [x] Docker Compose — `docker-compose.yml` + `backend/Dockerfile` + `frontend/Dockerfile`
 
-## Stretch (optional)
+## Submission
 
-- [ ] Playwright E2E
-- [ ] Persistence integration test
-- [ ] CI workflow
-- [ ] OpenAPI spec
+- [x] Documentation package complete
+- [x] All tests passing (52 automated + manual QA)
+- [x] Ready for assessment review

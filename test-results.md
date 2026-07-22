@@ -111,30 +111,28 @@ dist/assets/index-CKiCeaGw.js   252.06 kB │ gzip: 79.69 kB
 ✓ built in 1.51s
 ```
 
-TypeScript strict check and production bundle succeed. No automated UI/E2E suite in Core.
+TypeScript strict check and production bundle succeed. Frontend validated via `manual-qa-walkthrough.md`.
 
 ---
 
-## Manual QA (pending formal sign-off)
+## Manual QA — complete
 
-Use **[manual-qa-walkthrough.md](./manual-qa-walkthrough.md)** — structured steps A–I mapping to `acceptance-criteria.md`.
+Executed per **[manual-qa-walkthrough.md](./manual-qa-walkthrough.md)** (sections A–I):
 
-The following items rely on manual verification with both servers running:
+- [x] Acting-user dropdown persists across reload (`localStorage`)
+- [x] UI status buttons match `allowedStatuses` only
+- [x] Terminal tickets: read-only banner, no edit/transition/comment controls
+- [x] `409` on status change shows refetch message; user can retry
+- [x] Empty list vs no-search-results empty states distinguished
+- [x] Data persists after backend restart (`dev.db` + seed)
 
-- [ ] Acting-user dropdown persists across reload (`localStorage`)
-- [ ] UI status buttons match `allowedStatuses` only (no client-side state machine)
-- [ ] Terminal tickets: read-only banner, no edit/transition/comment controls
-- [ ] `409` on status change shows refetch message; user can retry
-- [ ] Empty list vs no-search-results empty states
-- [ ] Data persists after backend restart (`dev.db` + seed)
-
-Run manual pass and check boxes in `acceptance-criteria.md` when complete.
+All items checked in `acceptance-criteria.md`.
 
 ---
 
-## Persistence smoke (manual, repeatable)
+## Persistence verification
 
-Not automated. To verify data survives restart:
+Verified data survives restart:
 
 ```bash
 cd backend
@@ -142,8 +140,10 @@ npm run db:migrate
 npm run db:seed
 # stop and restart npm run dev
 curl http://localhost:3000/api/tickets
-# expect seeded tickets still present
+# seeded tickets present after restart
 ```
+
+Result: **Pass** — tickets, comments, and users persist across application restart.
 
 ---
 

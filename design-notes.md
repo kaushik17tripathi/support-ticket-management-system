@@ -185,6 +185,6 @@ Detailed test plan: **`test-strategy.md`**. Latest run output: **`test-results.m
 | **`CommentService`** | Empty message; terminal ticket block |
 | **Integration / API** | Check-order sequences return correct status codes when multiple conditions overlap |
 | **Persistence** | Data survives restart |
-| **UI** | Optional E2E for acting-user, list filters, terminal read-only presentation |
+| **UI** | E2E walkthrough (`manual-qa-walkthrough.md`) — acting-user, filters, terminal read-only |
 
 Unit tests anchor on `TicketStatusService` first — if it passes, route and UI mirroring stay aligned.

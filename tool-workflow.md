@@ -140,7 +140,7 @@ Optional: Cursor Bugbot-style review on diffs before commit (not required for Co
 | Document | Role |
 |----------|------|
 | `final-ai-usage-summary.md` | Rollup for reviewers |
-| `reflection.md` | Honest assessment of AI help/harm |
+| `reflection.md` | Project reflection and reusable workflow |
 | `ai-prompts/` | Full prompt history |
 | `tool-specific/cursor-workflow/` | Cursor-specific persistent context |
 | `manual-qa-walkthrough.md` | UI verification script |

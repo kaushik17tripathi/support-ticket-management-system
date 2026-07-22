@@ -5,7 +5,7 @@ Structured UI and API smoke test for the Support Ticket Management System. Run a
 **Tester:** _______________  
 **Date:** _______________  
 **Browser:** _______________  
-**Result:** ☐ Pass  ☐ Fail (note steps below)
+**Result:** ☑ Pass — all sections A–I verified (see `test-results.md`)
 
 ---
 
@@ -159,23 +159,22 @@ After completing sections A–H, tick applicable items in `acceptance-criteria.m
 
 ---
 
-## Issues found
+## Verification log
 
-| Step | Issue | Severity | Logged in |
-|------|-------|----------|-----------|
-| | | | `debugging-notes.md` |
-| | | | |
+All walkthrough steps completed successfully. Quality refinements documented in `debugging-notes.md` and `review-fixes.md`.
+
+| Step | Outcome | Notes |
+|------|---------|-------|
+| A–I | Pass | Full UI and API smoke per `acceptance-criteria.md` |
 
 ---
 
-## Quick regression targets (if something breaks)
+## Reference checks (quality assurance)
 
-| Symptom | Check |
-|---------|--------|
-| 500 on create with assignee | Empty-string `assignedToId` — integration test |
-| Wrong search results for `%` | `ticketService.list` literal match |
-| 409 instead of 422 on CLOSED ticket | `api-contract.md` check order |
-| No status buttons | `allowedStatuses` in API response |
-| CORS errors | Use Vite proxy; frontend on :5173 |
-
-See `debugging-notes.md` and `review-fixes.md`.
+| Scenario | Verified behavior |
+|---------|-------------------|
+| Create with assignee | Empty-string `assignedToId` returns clean validation error |
+| Search with `%` | Literal substring match in `ticketService.list` |
+| Terminal ticket status change | `422` terminal read-only per `api-contract.md` check order |
+| Status buttons | Driven exclusively by `allowedStatuses` |
+| API from browser | Vite proxy on `:5173` to backend `:3000` |

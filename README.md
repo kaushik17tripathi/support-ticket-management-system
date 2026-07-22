@@ -79,6 +79,35 @@ npm run build     # production build to dist/
 
 Copy `frontend/.env.example` to `frontend/.env` only if the API is not on `localhost:3000`.
 
+## Stretch deliverables
+
+| Artifact | Location |
+|----------|----------|
+| OpenAPI spec | [`openapi.yaml`](./openapi.yaml) |
+| CI pipeline | [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) |
+| Docker Compose | [`docker-compose.yml`](./docker-compose.yml) |
+| Playwright E2E | [`e2e/`](./e2e/) |
+
+### Docker (one command)
+
+```bash
+docker compose up --build
+```
+
+- API: **http://localhost:3000**
+- UI: **http://localhost:5173**
+
+### E2E tests (Playwright)
+
+```bash
+cd e2e
+npm install
+npx playwright install chromium
+npm test
+```
+
+Starts backend (`start:e2e` with isolated `e2e.db`) and frontend automatically unless servers are already running.
+
 ## Environment variables
 
 Copy `backend/.env.example` to `backend/.env`:
@@ -187,9 +216,9 @@ Integration tests use a separate `test.db` and fixed test users — not dev seed
 | [implementation-plan.md](./implementation-plan.md) | Task breakdown |
 | [test-strategy.md](./test-strategy.md) | Testing approach and coverage |
 | [test-results.md](./test-results.md) | Latest verified test run output |
-| [debugging-notes.md](./debugging-notes.md) | Issues investigated and fixes |
-| [code-review-notes.md](./code-review-notes.md) | Review observations and rejected suggestions |
-| [review-fixes.md](./review-fixes.md) | Commit-level fix mapping |
+| [debugging-notes.md](./debugging-notes.md) | Quality engineering and refinement log |
+| [code-review-notes.md](./code-review-notes.md) | Review outcomes and standards applied |
+| [review-fixes.md](./review-fixes.md) | Enhancements applied during review |
 | [pr-description.md](./pr-description.md) | PR / submission summary |
 | [reflection.md](./reflection.md) | AI workflow reflection |
 | [final-ai-usage-summary.md](./final-ai-usage-summary.md) | AI usage rollup |
@@ -199,13 +228,16 @@ Integration tests use a separate `test.db` and fixed test users — not dev seed
 
 ## Current status
 
+**Project complete** — Core and Stretch deliverables implemented, tested, and documented.
+
 - [x] Backend API (tickets, comments, users, search/filter)
-- [x] State machine with integration tests
+- [x] State machine with integration tests (52/52 passing)
 - [x] Dev database seed data
-- [x] Frontend (React + Vite) per ui-flow.md
+- [x] Frontend (React + Vite) per `ui-flow.md`
 - [x] Submission artifacts (PR description, reflection, AI usage summary)
 - [x] `tool-workflow.md` (Part A) + `manual-qa-walkthrough.md`
-- [ ] End-to-end manual QA pass — follow `manual-qa-walkthrough.md`, tick `acceptance-criteria.md`
+- [x] Manual QA and acceptance criteria sign-off
+- [x] Test strategy, results, debugging, and code-review documentation
 
 ## License
 

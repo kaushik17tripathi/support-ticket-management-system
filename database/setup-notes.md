@@ -131,3 +131,13 @@ Overview: `database/seed-data/README.md`
 | Seed shows 0 records / FK errors | Migrations not applied | `npm run db:migrate` then `npm run db:seed` |
 | Integration tests see dev data | Wrong `DATABASE_URL` | Integration script sets test DB automatically; don't point tests at `dev.db` |
 | `migrate dev` prompts for migration name | Schema drift | Name the migration or run `npx prisma migrate deploy` for apply-only |
+
+## Docker Compose (one-command stack)
+
+For a single-command local environment:
+
+```bash
+docker compose up --build
+```
+
+Uses `backend/Dockerfile` and `frontend/Dockerfile` at the repository root. Applies migrations and seed on backend startup; frontend proxies `/api` to the backend service.

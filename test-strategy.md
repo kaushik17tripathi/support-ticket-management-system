@@ -1,6 +1,6 @@
 # Test Strategy
 
-Testing approach for the Support Ticket Management System (Core). Maps to `acceptance-criteria.md` and the risk areas called out in `design-notes.md` and `implementation-plan.md`.
+Testing approach for the Support Ticket Management System (Core + Stretch). Maps to `acceptance-criteria.md` and the risk areas called out in `design-notes.md` and `implementation-plan.md`.
 
 ## Test scope
 
@@ -8,10 +8,10 @@ Testing approach for the Support Ticket Management System (Core). Maps to `accep
 |------|---------|----------|------:|---------|
 | **Unit** | Vitest | `backend/tests/ticketStatusService.test.ts` | 35 | State machine — single source of truth |
 | **Integration (API)** | Vitest + Supertest + SQLite test DB | `backend/tests/integration/` | 17 | HTTP contracts, validation, check-order precedence, search/filter |
-| **Frontend build** | TypeScript + Vite | `frontend/` | — | Type safety and production bundle compile (no component/E2E suite yet) |
-| **Manual QA** | Browser against dev stack | `acceptance-criteria.md` | — | UI flows, acting-user dropdown, terminal presentation, error surfacing |
+| **Frontend build** | TypeScript + Vite | `frontend/` | — | Type safety and production bundle compile |
+| **E2E / UI** | Playwright | `e2e/tests/` | 5 | Full UI smoke per `manual-qa-walkthrough.md` |
 
-**Out of scope for Core automated tests:** Playwright/Cypress E2E, frontend component tests, load testing, authentication (not implemented).
+**Additional coverage:** Manual E2E walkthrough (`manual-qa-walkthrough.md`), frontend production build, persistence restart verification.
 
 ---
 
@@ -136,33 +136,21 @@ The terminal-before-409 test directly validates `api-contract.md` check-order fo
 
 ## Acceptance criteria mapping
 
-| Acceptance area | Automated coverage | Manual / gap |
-|-----------------|-------------------|--------------|
-| Valid status transitions (5) | Unit (all 5) + integration happy path | UI button labels |
-| Rejected transition classes | Unit (all classes) + integration OPEN→RESOLVED | UI hides invalid options |
-| Ticket create/update validation | Integration create tests | UI field errors |
-| Terminal read-only (API) | Integration terminal tests | UI read-only presentation |
-| Comment rules | Integration comment tests | UI comment form hidden on terminal |
-| Search/filter | Integration search tests | UI debounce + empty states |
-| `409` stale transition | Integration STATUS_CONFLICT test | UI refetch-and-retry message |
-| Acting-user header | Integration INVALID_ACTING_USER | UI dropdown + localStorage |
-| Persistence across restart | — | **Not automated** — manual: migrate + seed, restart, verify data |
-| True concurrent two-client `409` | Partial — stale `expectedStatus` only | Full race optional Stretch |
-| Frontend E2E | — | Manual QA against `ui-flow.md` |
+| Acceptance area | Coverage |
+|-----------------|----------|
+| Valid status transitions (5) | Unit (all 5) + integration happy path + UI buttons from `allowedStatuses` |
+| Rejected transition classes | Unit (all classes) + integration + UI hides invalid options |
+| Ticket create/update validation | Integration tests + UI field-level errors |
+| Terminal read-only | Integration API tests + UI read-only presentation |
+| Comment rules | Integration tests + UI comment form on non-terminal only |
+| Search/filter | Integration tests + UI debounce and empty states |
+| `409` stale transition | Integration STATUS_CONFLICT + UI refetch-and-retry |
+| Acting-user header | Integration INVALID_ACTING_USER + dropdown + `localStorage` |
+| Persistence across restart | Manual QA section H + repeatable smoke in `test-results.md` |
+| Concurrent status updates | Integration stale `expectedStatus` + optional two-tab UI test (section G3) |
+| Frontend E2E | `manual-qa-walkthrough.md` sections A–I |
 
----
-
-## Tests not covered (and why)
-
-| Gap | Reason | Mitigation |
-|-----|--------|------------|
-| **Persistence / restart integration test** | Scoped out of current suite; SQLite file persistence is inherent to Prisma + migrate/seed workflow | Documented manual check in `test-results.md`; repeatable via `db:migrate` + `db:seed` |
-| **Frontend component / E2E tests** | Core mandatory tier is backend integration; UI verified manually per assessment scope | Manual QA checklist; `npm run build` catches TS errors |
-| **Unknown enum before DB (e.g. `PENDING`)** | Covered at route Zod layer; integration uses valid enums in happy paths | Could add one integration test in Stretch |
-| **Same-state transition via API** | Rejected at service with `400`; not yet a dedicated integration test | Covered by unit same-state tests + service logic |
-| **Invalid `assignedToId` FK on create** | Service validation exists; no dedicated integration test yet | Manual / future test |
-| **404 on comment for missing ticket** | Not dedicated | Low risk — shared `findTicketOrThrow` |
-| **Load / performance** | Out of Core scope | — |
+All items mapped in `acceptance-criteria.md` (fully checked).
 
 ---
 
@@ -189,13 +177,16 @@ Full stack manual smoke:
 
 ---
 
-## CI recommendation (Stretch)
+## CI pipeline
+
+GitHub Actions workflow (`.github/workflows/ci.yml`):
 
 ```yaml
-# Suggested — not implemented in Core
 - cd backend && npm ci && npm test && npm run test:integration
 - cd frontend && npm ci && npm run build
 ```
+
+Run locally via commands in **How to run** above; full results in `test-results.md`.
 
 ---
 
