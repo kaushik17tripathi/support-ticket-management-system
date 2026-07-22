@@ -9,7 +9,7 @@ A full-stack support ticket tracker for the AI Capability Exercise (Core). Inter
 | Layer | Technology |
 |-------|------------|
 | Backend | Node.js, Express, TypeScript, Prisma 7, SQLite, Zod |
-| Frontend | React, Vite, TypeScript *(in progress)* |
+| Frontend | React, Vite, TypeScript |
 | Tests | Vitest, Supertest |
 
 ## Prerequisites
@@ -18,7 +18,9 @@ A full-stack support ticket tracker for the AI Capability Exercise (Core). Inter
 - **npm 10+**
 - Git
 
-## Quick start (backend)
+## Quick start (full stack)
+
+### 1. Backend
 
 ```bash
 git clone <repository-url>
@@ -36,7 +38,18 @@ npm run dev
 
 The API listens on **http://localhost:3000**.
 
-Verify:
+### 2. Frontend (separate terminal)
+
+```bash
+cd frontend
+npm install
+cp .env.example .env          # optional — defaults use Vite proxy to :3000
+npm run dev
+```
+
+The UI listens on **http://localhost:5173** and proxies `/api` to the backend.
+
+### Verify backend
 
 ```bash
 curl http://localhost:3000/health
@@ -48,15 +61,23 @@ curl http://localhost:3000/api/users
 
 ## Frontend
 
-The React + Vite frontend is under `frontend/` and will be added in a subsequent milestone. Once available:
+React + Vite SPA implementing [ui-flow.md](./ui-flow.md):
+
+- Acting-user dropdown (`GET /users`, persisted in `localStorage`)
+- Ticket list with debounced search + single-status filter
+- Create ticket form (priority required, no default)
+- Ticket detail: view/edit, status buttons from `allowedStatuses` only, comments
+- Terminal tickets (`CLOSED` / `CANCELLED`): read-only presentation
+- Error handling for all `api-contract.md` error codes
 
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev       # http://localhost:5173
+npm run build     # production build to dist/
 ```
 
-Until then, use the API directly (curl, Postman, etc.) or the integration tests as proof of backend behaviour.
+Copy `frontend/.env.example` to `frontend/.env` only if the API is not on `localhost:3000`.
 
 ## Environment variables
 
@@ -81,6 +102,16 @@ No secrets are required for Core (no authentication).
 
 Detailed instructions: [database/setup-notes.md](./database/setup-notes.md)  
 Seed data overview: [database/seed-data/README.md](./database/seed-data/README.md)
+
+## npm scripts (frontend)
+
+Run from `frontend/`:
+
+| Script | Purpose |
+|--------|---------|
+| `npm run dev` | Start Vite dev server (`http://localhost:5173`, proxies `/api`) |
+| `npm run build` | Typecheck + production build |
+| `npm run preview` | Preview production build |
 
 ## npm scripts (backend)
 
@@ -161,8 +192,8 @@ Integration tests use a separate `test.db` and fixed test users — not dev seed
 - [x] Backend API (tickets, comments, users, search/filter)
 - [x] State machine with integration tests
 - [x] Dev database seed data
-- [ ] Frontend (React + Vite)
-- [ ] End-to-end manual test via UI
+- [x] Frontend (React + Vite) per ui-flow.md
+- [ ] End-to-end manual QA pass against acceptance-criteria.md
 
 ## License
 

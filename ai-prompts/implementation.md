@@ -426,3 +426,28 @@ tickets per terminal read-only rules.
 
 **Note:** Verified on clean DB: `prisma migrate deploy` then `npm run db:seed` twice —
 counts remain 5/10/6 (idempotent). Integration tests unaffected (separate test.db).
+
+---
+
+## Prompt 13 — React frontend (ui-flow.md)
+
+**Prompt:**
+
+Continue with frontend (item 3): React + Vite + TS per ui-flow.md — acting-user dropdown,
+ticket list, create, detail, comments, terminal read-only, error handling from
+allowedStatuses only (never client-side state machine).
+
+**AI Response Summary:** Scaffolded `frontend/` with Vite + React + TypeScript +
+react-router-dom. Implemented API client, ActingUserContext (localStorage), list/create/detail
+pages, status buttons driven solely by `allowedStatuses`, 409 refetch-and-retry flow,
+terminal presentation, and error mapping for all api-contract.md codes. Vite dev proxy
+to backend :3000. `npm run build` passes.
+
+**Accepted:** Full frontend core flows as specified in ui-flow.md and acceptance-criteria.md.
+
+**Changed:** N/A
+
+**Rejected:** N/A
+
+**Note:** No client-side transition map — `transitionActionLabel` is display text only;
+which buttons render comes exclusively from API `allowedStatuses`.
