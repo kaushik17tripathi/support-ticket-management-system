@@ -1,6 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const isCi = Boolean(process.env.CI);
+const backendPort = process.env.E2E_BACKEND_PORT ?? "3010";
+const frontendPort = process.env.E2E_FRONTEND_PORT ?? "5175";
+const backendUrl = `http://localhost:${backendPort}`;
+const frontendUrl = `http://localhost:${frontendPort}`;
 
 export default defineConfig({
   testDir: "./tests",
@@ -10,7 +14,7 @@ export default defineConfig({
   workers: 1,
   reporter: isCi ? "github" : "list",
   use: {
-    baseURL: "http://localhost:5173",
+    baseURL: frontendUrl,
     trace: "on-first-retry",
   },
   projects: [
@@ -19,11 +23,29 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  webServer: {
-    command:
-      'npx concurrently -k -s first "npm run start:e2e --prefix ../backend" "npm run dev --prefix ../frontend"',
-    url: "http://localhost:5173",
-    timeout: 120_000,
-    reuseExistingServer: !isCi,
-  },
+  webServer: [
+    {
+      command: `npm run start:e2e`,
+      cwd: "../backend",
+      url: `${backendUrl}/health`,
+      timeout: 180_000,
+      reuseExistingServer: false,
+      env: {
+        ...process.env,
+        PORT: backendPort,
+        DATABASE_URL: "file:./prisma/e2e.db",
+      },
+    },
+    {
+      command: `npm run dev -- --port ${frontendPort}`,
+      cwd: "../frontend",
+      url: frontendUrl,
+      timeout: 180_000,
+      reuseExistingServer: false,
+      env: {
+        ...process.env,
+        VITE_API_PROXY: backendUrl,
+      },
+    },
+  ],
 });
